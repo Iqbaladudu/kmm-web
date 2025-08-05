@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profil Mahasiswa - KMM Mesir{% endblock %}
+
+{% block navbar %}
+    {% include "navbar.html" %}
+{% endblock %}
+
+{% block sidebar %}
+    {% include "sidebar.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-12">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl font-bold text-primary mb-8">Profil Mahasiswa</h1>
+        <p class="text-gray-500 mb-8">Informasi detail mahasiswa yang terdaftar di KMM Mesir.</p>
+
+        {% if student_data %}
+        <form class="space-y-6">
+            <!-- Header Section -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="col-span-1 flex flex-col items-center justify-center">
+                    {% if student_data.photo %}
+                        <img src="{{ student_data.photo.url }}" alt="{{ student_data.full_name }}" class="w-48 h-48 object-cover rounded-full border-4 border-primary shadow-lg">
+                    {% else %}
+                        <div class="w-48 h-48 flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 rounded-full border-4 border-primary text-gray-400 text-5xl">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                    <h2 class="text-xl font-semibold mt-4">{{ student_data.full_name }}</h2>
+                    <span class="inline-block px-3 py-1 text-xs font-medium bg-primary text-white rounded-full mt-2">{{ student_data.level }}</span>
+                </div>
+
+                <div class="col-span-2 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Email</label>
+                            <input type="text" value="{{ student_data.email }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Nomor WhatsApp</label>
+                            <input type="text" value="{{ student_data.whatsapp_number }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Tempat/Tgl Lahir</label>
+                            <input type="text" value="{{ student_data.birth_place }}, {{ student_data.birth_date|date:'d M Y' }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Jenis Kelamin</label>
+                            <input type="text" value="{{ student_data.get_gender_display }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Form Sections -->
+            <div class="space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Pribadi</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Status Perkawinan</label>
+                            <input type="text" value="{{ student_data.get_marital_status_display }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Kewarganegaraan</label>
+                            <input type="text" value="{{ student_data.citizenship_status }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Wilayah Asal</label>
+                            <input type="text" value="{{ student_data.region_origin }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Nama Orang Tua</label>
+                            <input type="text" value="{{ student_data.parents_name }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Telp Orang Tua</label>
+                            <input type="text" value="{{ student_data.parents_phone }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Akademis</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Institusi</label>
+                            <input type="text" value="{{ student_data.institution }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Fakultas</label>
+                            <input type="text" value="{{ student_data.faculty }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Jurusan</label>
+                            <input type="text" value="{{ student_data.major }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Jenjang</label>
+                            <input type="text" value="{{ student_data.get_degree_level_display }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Semester</label>
+                            <input type="text" value="{{ student_data.semester_level }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Nilai Terakhir</label>
+                            <input type="text" value="{{ student_data.latest_grade }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Finansial</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Pendanaan Pendidikan</label>
+                            <input type="text" value="{{ student_data.get_education_funding_display }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Sumber Beasiswa</label>
+                            <input type="text" value="{{ student_data.scholarship_source }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Biaya Hidup (Bulan)</label>
+                            <input type="text" value="Rp {{ student_data.living_cost|floatformat:2 }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Pemasukan Bulanan</label>
+                            <input type="text" value="Rp {{ student_data.monthly_income|floatformat:2 }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Identitas Lainnya</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Nomor Paspor</label>
+                            <input type="text" value="{{ student_data.passport_number }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">NIK</label>
+                            <input type="text" value="{{ student_data.nik }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Nomor Lapdik</label>
+                            <input type="text" value="{{ student_data.lapdik_number }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Tanggal Kedatangan</label>
+                            <input type="text" value="{{ student_data.arrival_date|date:'d M Y' }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Asal Sekolah</label>
+                            <input type="text" value="{{ student_data.school_origin }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Profile Button -->
+            <div class="flex justify-end mt-8">
+                <a href="{% url "profile_edit" %}" class="py-3 px-6 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark transition duration-300">
+                    Ubah Profil
+                </a>
+            </div>
+        </form>
+        {% else %}
+        <div class="bg-white rounded-xl shadow-md p-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Mahasiswa Tidak Ditemukan</h2>
+            <p class="text-gray-600">Profil mahasiswa belum tersedia. Silakan hubungi admin atau lengkapi pendaftaran Anda.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

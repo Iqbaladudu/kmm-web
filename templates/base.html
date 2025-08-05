@@ -1,0 +1,21 @@
+{% load static tailwind_tags %}
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %} Kesepakan Mahasiswa Minangkabau Mesir {% endblock %}</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js"></script>
+    {% tailwind_css %}
+</head>
+<body>
+{% block navbar %} {% endblock %}
+<main class="flex flex-row">
+    {% block sidebar %}
+    {% endblock %}
+    {% block content %}
+    {% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kartu Anggota Mahasiswa</title>
+    <style>
+        /* Reset Default Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Card Container */
+        .card {
+            width: 380px;
+            height: 220px;
+            background: linear-gradient(to bottom right, #ffffff, #fafafa);
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Grid layout for left and right sections */
+            padding: 20px;
+        }
+
+        /* Left Section (Institution Details) */
+        .left-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .logo {
+            width: 80px;
+            height: auto;
+        }
+        .institution-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #d32f2f; /* Warna khas KM3 */
+            margin-top: 10px;
+        }
+        .tagline {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Right Section (Student Information) */
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .details {
+            text-align: right;
+        }
+        .details p {
+            font-size: 12px;
+            margin: 5px 0;
+            color: #333;
+        }
+        .details strong {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        /* QR Code */
+        .qr-code {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            width: 70px;
+            height: auto;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            font-size: 10px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Kartu Utama -->
+    <div class="card">
+        <!-- Bagian Kiri: Informasi Lembaga -->
+        <div class="left-section">
+            <!-- Logo Lembaga -->
+            <img src="{{ logo_url }}" alt="Logo KM3" class="logo">
+
+            <!-- Nama Lembaga -->
+            <div class="institution-name">Kesepakatan Mahasiswa Minangkabau Mesir</div>
+
+            <!-- Tagline -->
+            <div class="tagline">Menyatukan Minang di Perantauan</div>
+        </div>
+
+        <!-- Bagian Kanan: Informasi Mahasiswa -->
+        <div class="right-section">
+            <div class="details">
+                <p><strong>Nama:</strong> {{ name }}</p>
+                <p><strong>ID:</strong> {{ student_id }}</p>
+                <p><strong>Jurusan:</strong> {{ department }}</p>
+                <p><strong>Alamat:</strong> {{ address }}</p>
+                <p><strong>Email:</strong> {{ email }}</p>
+                <p><strong>WhatsApp:</strong> {{ whatsapp }}</p>
+            </div>
+
+            <!-- QR Code -->
+            <img src="{{ qr_code }}" alt="QR Code" class="qr-code">
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            &copy; 2025 Kesepakatan Mahasiswa Minangkabau Mesir
+        </div>
+    </div>
+</body>
+</html>

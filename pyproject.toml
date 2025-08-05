@@ -1,0 +1,24 @@
+[project]
+name = "kmm-web"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cookiecutter>=2.6.0",
+    "django>=5.2.4",
+    "django-constance>=4.3.2",
+    "django-guardian>=3.0.3",
+    "django-import-export>=4.3.8",
+    "django-location-field>=2.7.3",
+    "django-simple-history>=3.10.1",
+    "django-storages[s3]>=1.14.6",
+    "django-tailwind[reload]>=4.2.0",
+    "django-unfold>=0.62.0",
+    "django-widget-tweaks>=1.5.0",
+    "honcho>=2.0.0",
+    "pillow>=11.3.0",
+    "python-dotenv>=1.1.1",
+    "qrcode[pil]>=8.2",
+    "weasyprint>=66.0",
+]

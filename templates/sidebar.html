@@ -1,0 +1,32 @@
+<aside class="h-screen w-64 bg-white border-r border-gray-200 flex flex-col py-6 px-4 shadow-sm" aria-label="Sidebar">
+  <!-- Menu -->
+  <nav class="flex flex-col gap-4">
+    <!-- Data Diri Saya -->
+    <a href="{% url "profile" %}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
+      <!-- User Icon -->
+      <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M6 20c0-2.2 3.6-4 6-4s6 1.8 6 4"></path>
+      </svg>
+      <span class="font-medium">Data diri saya</span>
+    </a>
+    <!-- Pengaturan -->
+    <a href="/settings" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
+      <!-- Settings Icon -->
+      <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span class="font-medium">Pengaturan</span>
+    </a>
+    <!-- KTA Elektronik -->
+    <a href="/kta-elektronik" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
+      <!-- Card Icon -->
+      <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="7" width="20" height="10" rx="2"></rect>
+        <path d="M2 11h20"></path>
+      </svg>
+      <span class="font-medium">KTA Elektronik</span>
+    </a>
+  </nav>
+</aside>
