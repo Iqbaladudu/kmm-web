@@ -52,17 +52,32 @@ class Student(models.Model):
     home_name = models.CharField(max_length=80, blank=True)
     home_location = models.CharField(max_length=150, blank=True)
     parents_name = models.CharField(max_length=150, blank=True)
-    parents_phone = models.CharField(max_length=20, blank=True)
-    umdah_name = models.CharField(max_length=80, blank=True)
-    umdah_phone = models.CharField(max_length=20, blank=True)
-    education_funding = models.CharField(max_length=20, choices=EDUCATION_FUNDING_CHOICES)
-    scholarship_source = models.CharField(max_length=120, null=True, blank=True)
-    living_cost = models.DecimalField(max_digits=12, decimal_places=2)
-    monthly_income = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    photo = models.ImageField(upload_to='student_photos', blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    level = models.CharField(max_length=10, choices=LEVEL_CHOICES, default='regular')
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='maba')
+
+    # Health Information
+    DISEASE_STATUS_CHOICES = [
+        ('sembuh', 'Sembuh'),
+        ('belum', 'Belum Sembuh'),
+    ]
+    disease_history = models.CharField(max_length=255, blank=True, verbose_name="Riwayat Penyakit")
+    disease_status = models.CharField(max_length=10, choices=DISEASE_STATUS_CHOICES, blank=True)
+
+    # Interests and Talents
+    sport_interest = models.CharField(max_length=150, blank=True, verbose_name="Minat Olahraga")
+    sport_achievement = models.TextField(blank=True, verbose_name="Prestasi Olahraga")
+    art_interest = models.CharField(max_length=150, blank=True, verbose_name="Minat Kesenian")
+    art_achievement = models.TextField(blank=True, verbose_name="Prestasi Kesenian")
+    literacy_interest = models.CharField(max_length=150, blank=True, verbose_name="Minat Literasi")
+    literacy_achievement = models.TextField(blank=True, verbose_name="Prestasi Literasi")
+    science_interest = models.CharField(max_length=150, blank=True, verbose_name="Minat Keilmuan")
+    science_achievement = models.TextField(blank=True, verbose_name="Prestasi Keilmuan")
+    mtq_interest = models.CharField(max_length=150, blank=True, verbose_name="Minat MTQ")
+    mtq_achievement = models.TextField(blank=True, verbose_name="Prestasi MTQ")
+    media_interest = models.CharField(max_length=150, blank=True, verbose_name="Minat Media")
+    media_achievement = models.TextField(blank=True, verbose_name="Prestasi Media")
+
+    # Organizational History
+    organization_history = models.TextField(blank=True, verbose_name="Riwayat Organisasi")
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -73,4 +88,3 @@ class Student(models.Model):
 
     def __str__(self):
         return self.full_name
-

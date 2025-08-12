@@ -144,6 +144,87 @@
                     </div>
                 </div>
 
+                <!-- Health History -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Riwayat Kesehatan</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Riwayat Penyakit</label>
+                            {{ form.disease_history }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Status Penyakit</label>
+                            {{ form.disease_status }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interests and Talents -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Minat dan Bakat</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Olahraga</label>
+                            {{ form.sport_interest }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Olahraga</label>
+                            {{ form.sport_achievement }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Kesenian</label>
+                            {{ form.art_interest }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Kesenian</label>
+                            {{ form.art_achievement }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Literasi</label>
+                            {{ form.literacy_interest }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Literasi</label>
+                            {{ form.literacy_achievement }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Keilmuan</label>
+                            {{ form.science_interest }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Keilmuan</label>
+                            {{ form.science_achievement }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">MTQ</label>
+                            {{ form.mtq_interest }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi MTQ</label>
+                            {{ form.mtq_achievement }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Media</label>
+                            {{ form.media_interest }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Media</label>
+                            {{ form.media_achievement }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Organizational History -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Riwayat Organisasi</h2>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Riwayat Organisasi</label>
+                            {{ form.organization_history }}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Financial Information -->
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Finansial</h2>

@@ -17,6 +17,4 @@ def create_profile(sender, instance, created, **kwargs):
             marital_status='single',
             degree_level='S1',
             semester_level=1,
-            education_funding='non-beasiswa',
-            living_cost=0,
         )

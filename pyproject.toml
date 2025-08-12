@@ -16,6 +16,7 @@ dependencies = [
     "django-tailwind[reload]>=4.2.0",
     "django-unfold>=0.62.0",
     "django-widget-tweaks>=1.5.0",
+    "faker>=37.5.3",
     "honcho>=2.0.0",
     "pillow>=11.3.0",
     "python-dotenv>=1.1.1",

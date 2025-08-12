@@ -116,6 +116,84 @@
                 </div>
 
                 <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Riwayat Kesehatan</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Riwayat Penyakit</label>
+                            <input type="text" value="{{ student_data.disease_history }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Status Penyakit</label>
+                            <input type="text" value="{{ student_data.get_disease_status_display }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Minat dan Bakat</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Olahraga</label>
+                            <input type="text" value="{{ student_data.sport_interest }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Olahraga</label>
+                            <input type="text" value="{{ student_data.sport_achievement }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Kesenian</label>
+                            <input type="text" value="{{ student_data.art_interest }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Kesenian</label>
+                            <input type="text" value="{{ student_data.art_achievement }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Literasi</label>
+                            <input type="text" value="{{ student_data.literacy_interest }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Literasi</label>
+                            <input type="text" value="{{ student_data.literacy_achievement }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Keilmuan</label>
+                            <input type="text" value="{{ student_data.science_interest }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Keilmuan</label>
+                            <input type="text" value="{{ student_data.science_achievement }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">MTQ</label>
+                            <input type="text" value="{{ student_data.mtq_interest }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi MTQ</label>
+                            <input type="text" value="{{ student_data.mtq_achievement }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Media</label>
+                            <input type="text" value="{{ student_data.media_interest }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Prestasi Media</label>
+                            <input type="text" value="{{ student_data.media_achievement }}" disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Riwayat Organisasi</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600">Riwayat Organisasi</label>
+                            <textarea disabled class="mt-1 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:outline-none focus:border-primary">{{ student_data.organization_history }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Finansial</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
