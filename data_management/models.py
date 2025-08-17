@@ -29,7 +29,7 @@ class Student(models.Model):
 
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='student_profile', null=True, blank=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    full_name = models.CharField(max_length=150)
+    full_name = models.CharField(max_length=150, db_index=True)
     passport_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     nik = models.CharField(max_length=16, unique=True, null=True, blank=True)
     lapdik_number = models.CharField(max_length=30, blank=True)
@@ -39,20 +39,21 @@ class Student(models.Model):
     arrival_date = models.DateField(null=True, blank=True)
     school_origin = models.CharField(max_length=120, blank=True)
     citizenship_status = models.CharField(max_length=50, blank=True)
-    marital_status = models.CharField(max_length=20, choices=MARITAL_STATUS_CHOICES)
+    marital_status = models.CharField(max_length=20, choices=MARITAL_STATUS_CHOICES, db_index=True)
     region_origin = models.CharField(max_length=80, blank=True)
     whatsapp_number = models.CharField(max_length=20, blank=True)
     email = models.EmailField(max_length=120, unique=True)
     institution = models.CharField(max_length=120, blank=True)
     faculty = models.CharField(max_length=120, blank=True)
     major = models.CharField(max_length=120, blank=True)
-    degree_level = models.CharField(max_length=20, choices=DEGREE_LEVEL_CHOICES)
+    degree_level = models.CharField(max_length=20, choices=DEGREE_LEVEL_CHOICES, db_index=True)
     semester_level = models.SmallIntegerField()
     latest_grade = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     home_name = models.CharField(max_length=80, blank=True)
     home_location = models.CharField(max_length=150, blank=True)
     parents_name = models.CharField(max_length=150, blank=True)
-    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='maba')
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='maba', db_index=True)
+    is_draft = models.BooleanField(default=False)  # indicates incomplete / draft record managed by staff
 
     # Health Information
     DISEASE_STATUS_CHOICES = [

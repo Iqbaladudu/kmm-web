@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load split_url %}
+{% block title %}Data Mahasiswa - KMM Mesir{% endblock %}
+
+{% block navbar %}
+    {% include 'navbar.html' %}
+{% endblock %}
+{% block sidebar %}
+    {% include 'sidebar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="w-full p-6 space-y-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <h1 class="text-2xl font-bold text-gray-800">Daftar Mahasiswa</h1>
+    <div class="flex items-center gap-3 flex-wrap">
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition {% if is_filtered %}bg-blue-50 text-blue-700 border-blue-200{% else %}bg-gray-100 text-gray-600 border-gray-300{% endif %}">
+        Menampilkan <span class="font-bold">{{ filtered_students }}</span> dari <span class="font-bold">{{ total_students }}</span> mahasiswa
+        {% if is_filtered %}
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white">Filtered</span>
+        {% else %}
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-400 text-white">All</span>
+        {% endif %}
+      </span>
+      <a href="{% url 'export_students_csv' %}?{{ base_filter_query }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium shadow-sm">Export CSV</a>
+      <button id="copyCsvBtn" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium shadow-sm">Copy CSV</button>
+      {% if is_filtered %}
+        <a href="?" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-medium">Clear Filters</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <form method="get" class="bg-white rounded-lg shadow p-4 grid grid-cols-1 md:grid-cols-6 gap-4 text-sm">
+    <div class="md:col-span-2">
+      <label class="block text-gray-600 mb-1">Cari</label>
+      <input type="text" name="q" value="{{ query }}" placeholder="Nama, Email, Passport, NIK..." class="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-400" />
+    </div>
+    <div>
+      <label class="block text-gray-600 mb-1">Gender</label>
+      <select name="gender" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring">
+        <option value="">Semua</option>
+        {% for val,label in gender_choices %}
+        <option value="{{ val }}" {% if selected_gender == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-gray-600 mb-1">Jenjang</label>
+      <select name="degree_level" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring">
+        <option value="">Semua</option>
+        {% for val,label in degree_choices %}
+        <option value="{{ val }}" {% if selected_degree_level == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-gray-600 mb-1">Level</label>
+      <select name="level" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring">
+        <option value="">Semua</option>
+        {% for val,label in level_choices %}
+        <option value="{{ val }}" {% if selected_level == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-gray-600 mb-1">Status Nikah</label>
+      <select name="marital_status" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring">
+        <option value="">Semua</option>
+        {% for val,label in marital_choices %}
+        <option value="{{ val }}" {% if selected_marital_status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="flex items-end space-x-2 md:col-span-6">
+      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">Filter</button>
+      <a href="?" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">Reset</a>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-100 text-gray-700 text-xs uppercase tracking-wide">
+          <tr>
+
+            <!-- Re-render explicit headers to keep existing sorting logic -->
+            <th class="px-4 py-3 text-left {% if current_sort == 'full_name' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=full_name&dir={% if current_sort == 'full_name' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Nama
+                {% if current_sort == 'full_name' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left {% if current_sort == 'email' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=email&dir={% if current_sort == 'email' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Email
+                {% if current_sort == 'email' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left">Passport</th>
+            <th class="px-4 py-3 text-left">NIK</th>
+            <th class="px-4 py-3 text-left {% if current_sort == 'degree_level' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=degree_level&dir={% if current_sort == 'degree_level' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Jenjang
+                {% if current_sort == 'degree_level' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left {% if current_sort == 'semester_level' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=semester_level&dir={% if current_sort == 'semester_level' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Semester
+                {% if current_sort == 'semester_level' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left {% if current_sort == 'faculty' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=faculty&dir={% if current_sort == 'faculty' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Fakultas
+                {% if current_sort == 'faculty' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left {% if current_sort == 'major' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=major&dir={% if current_sort == 'major' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Jurusan
+                {% if current_sort == 'major' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left {% if current_sort == 'level' %}bg-blue-50{% endif %}">
+              <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}sort=level&dir={% if current_sort == 'level' and current_dir == 'asc' %}desc{% else %}asc{% endif %}" class="flex items-center gap-1 group">
+                Level
+                {% if current_sort == 'level' %}<span class="text-xs {% if current_dir == 'asc' %}rotate-180{% endif %}">▲</span>{% else %}<span class="opacity-0 group-hover:opacity-50 text-xs">▲</span>{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-left">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for s in students %}
+          <tr class="hover:bg-gray-50 {% if s.is_draft %}opacity-90{% endif %}">
+            <td class="px-4 py-3 font-medium text-gray-800 flex items-center gap-2">
+              <a href="{% url 'staff_student_detail' s.pk %}" class="text-blue-600 hover:underline">{{ s.full_name }}</a>
+              {% if s.is_draft %}<span class="px-2 py-0.5 text-[10px] rounded bg-amber-500 text-white">Draft</span>{% endif %}
+            </td>
+            <td class="px-4 py-3">{{ s.email }}</td>
+            <td class="px-4 py-3">{{ s.passport_number|default:'-' }}</td>
+            <td class="px-4 py-3">{{ s.nik|default:'-' }}</td>
+            <td class="px-4 py-3">{{ s.degree_level }}</td>
+            <td class="px-4 py-3">{{ s.semester_level }}</td>
+            <td class="px-4 py-3">{{ s.faculty|default:'-' }}</td>
+            <td class="px-4 py-3">{{ s.major|default:'-' }}</td>
+            <td class="px-4 py-3">{{ s.get_level_display }}</td>
+            <td class="px-4 py-3">
+              <a href="{% url 'staff_student_edit' s.pk %}?next={{ request.get_full_path|urlencode }}" class="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700">Edit</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="px-4 py-6 text-center text-gray-500">Tidak ada data.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-4 py-3 bg-gray-50 text-sm">
+      <div class="text-gray-600">
+        Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}
+      </div>
+      <div class="flex flex-wrap gap-1 items-center">
+        {% if page_obj.has_previous %}
+            <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded border bg-white hover:bg-gray-100">Prev</a>
+        {% else %}
+            <span class="px-3 py-1 rounded border bg-gray-100 text-gray-400">Prev</span>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+                <span class="px-3 py-1 rounded bg-blue-600 text-white font-semibold">{{ num }}</span>
+            {% elif num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}page={{ num }}" class="px-3 py-1 rounded border bg-white hover:bg-gray-100">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <a href="?{{ base_filter_query }}{% if base_filter_query %}&{% endif %}page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded border bg-white hover:bg-gray-100">Next</a>
+        {% else %}
+            <span class="px-3 py-1 rounded border bg-gray-100 text-gray-400">Next</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-6 right-6 hidden px-4 py-3 rounded bg-gray-800 text-white text-sm shadow-lg">
+    CSV disalin ke clipboard
+</div>
+
+<script>
+(async function() {
+  const btn = document.getElementById('copyCsvBtn');
+  const toast = document.getElementById('toast');
+  if(btn){
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = 'Memproses...';
+      try {
+        const resp = await fetch("{% url 'export_students_csv' %}?{{ base_filter_query }}");
+        if(!resp.ok) throw new Error('Gagal fetch CSV');
+        const text = await resp.text();
+        await navigator.clipboard.writeText(text);
+        toast.classList.remove('hidden');
+        toast.classList.add('flex');
+        setTimeout(()=>{ toast.classList.add('hidden'); toast.classList.remove('flex'); }, 2500);
+        btn.textContent = 'Copied!';
+        setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 1500);
+      } catch(e){
+        btn.textContent = 'Gagal';
+        setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 2000);
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Detail Mahasiswa - {{ student.full_name }}{% endblock %}
+
+{% block navbar %}{% include 'navbar.html' %}{% endblock %}
+{% block sidebar %}{% include 'sidebar.html' %}{% endblock %}
+
+{% block content %}
+<div class="w-full p-6 space-y-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Detail Mahasiswa</h1>
+      <p class="text-sm text-gray-500">Profil lengkap mahasiswa terdaftar.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'staff_student_list' %}" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium">← Kembali</a>
+      <a href="{% url 'staff_student_edit' student.pk %}?next={{ request.get_full_path|urlencode }}" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">Edit</a>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6 space-y-8">
+    <!-- Header Card -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-3xl text-blue-400 border border-blue-200">
+          {{ student.full_name|first|upper }}
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            {{ student.full_name }}
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-600 text-white">{{ student.get_level_display }}</span>
+          </h2>
+          <p class="text-sm text-gray-500">Email: {{ student.email }}</p>
+          <p class="text-sm text-gray-500">Gender: {{ student.get_gender_display }}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-gray-500">Jenjang</p>
+          <p class="font-semibold text-gray-800">{{ student.degree_level }}</p>
+        </div>
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-gray-500">Semester</p>
+          <p class="font-semibold text-gray-800">{{ student.semester_level }}</p>
+        </div>
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-gray-500">Nilai Terakhir</p>
+            <p class="font-semibold text-gray-800">{{ student.latest_grade|default:'-' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Identitas -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">Identitas</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div>
+          <p class="text-gray-500">Passport</p>
+          <p class="font-medium">{{ student.passport_number|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">NIK</p>
+          <p class="font-medium">{{ student.nik|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Status Nikah</p>
+          <p class="font-medium">{{ student.get_marital_status_display }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Tempat / Tgl Lahir</p>
+          <p class="font-medium">{{ student.birth_place|default:'-' }}, {{ student.birth_date|date:'d M Y'|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Kewarganegaraan</p>
+          <p class="font-medium">{{ student.citizenship_status|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Wilayah Asal</p>
+          <p class="font-medium">{{ student.region_origin|default:'-' }}</p>
+        </div>
+        <div class="md:col-span-3">
+          <p class="text-gray-500">Alamat (Home)</p>
+          <p class="font-medium">{{ student.home_name|default:'-' }} {{ student.home_location }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Akademik -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">Akademik</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div>
+          <p class="text-gray-500">Institusi</p>
+          <p class="font-medium">{{ student.institution|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Fakultas</p>
+          <p class="font-medium">{{ student.faculty|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Jurusan</p>
+          <p class="font-medium">{{ student.major|default:'-' }}</p>
+        </div>
+        <div class="md:col-span-3">
+          <p class="text-gray-500">Riwayat Organisasi</p>
+          <p class="font-medium whitespace-pre-line">{{ student.organization_history|default:'-' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kesehatan -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">Kesehatan</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div>
+          <p class="text-gray-500">Riwayat Penyakit</p>
+          <p class="font-medium">{{ student.disease_history|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Status Penyakit</p>
+          <p class="font-medium">{{ student.get_disease_status_display|default:'-' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Minat & Bakat -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">Minat & Bakat</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+        <div>
+          <p class="text-gray-500 mb-1 font-medium">Olahraga</p>
+          <p class="font-medium">{{ student.sport_interest|default:'-' }}</p>
+          <p class="text-xs text-gray-500">{{ student.sport_achievement|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500 mb-1 font-medium">Kesenian</p>
+          <p class="font-medium">{{ student.art_interest|default:'-' }}</p>
+          <p class="text-xs text-gray-500">{{ student.art_achievement|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500 mb-1 font-medium">Literasi</p>
+          <p class="font-medium">{{ student.literacy_interest|default:'-' }}</p>
+          <p class="text-xs text-gray-500">{{ student.literacy_achievement|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500 mb-1 font-medium">Keilmuan</p>
+          <p class="font-medium">{{ student.science_interest|default:'-' }}</p>
+          <p class="text-xs text-gray-500">{{ student.science_achievement|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500 mb-1 font-medium">MTQ</p>
+          <p class="font-medium">{{ student.mtq_interest|default:'-' }}</p>
+          <p class="text-xs text-gray-500">{{ student.mtq_achievement|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500 mb-1 font-medium">Media</p>
+          <p class="font-medium">{{ student.media_interest|default:'-' }}</p>
+          <p class="text-xs text-gray-500">{{ student.media_achievement|default:'-' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

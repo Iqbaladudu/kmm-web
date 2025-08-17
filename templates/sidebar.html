@@ -1,5 +1,7 @@
-<aside class="fixed">
-    <div class="h-screen w-64 bg-white border-r border-gray-200 flex flex-col py-6 px-4 shadow-sm" aria-label="Sidebar">
+{% load split_url %}
+
+<aside class="{% if request.path|split|index:1 == "staff" %} {% else %} sticky {% endif %}">
+    <div class="h-full w-64 bg-white border-r border-gray-200 flex flex-col py-6 px-4 shadow-sm" aria-label="Sidebar">
         <nav class="flex flex-col gap-4">
     {% if user.is_staff %}
             <a href="{% url "profile" %}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
@@ -9,6 +11,14 @@
         <path d="M6 20c0-2.2 3.6-4 6-4s6 1.8 6 4"></path>
       </svg>
       <span class="font-medium">Data</span>
+    </a>
+
+    <a href="{% url 'staff_student_list' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
+      <!-- List Icon -->
+      <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <span class="font-medium">Daftar Mahasiswa</span>
     </a>
 
     <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
