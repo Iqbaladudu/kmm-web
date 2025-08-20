@@ -1,136 +1,72 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load widget_tweaks %}
 
 {% block title %}Login - KMM Mesir{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
         <div>
-            <div class="mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-primary">
-                <svg class="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                </svg>
-            </div>
             <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Login Mahasiswa
+                Login
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
-                Masuk ke akun mahasiswa KMM Mesir Anda
+                Masuk ke sistem KMM Mesir
             </p>
         </div>
-
         <form class="mt-8 space-y-6" method="post">
             {% csrf_token %}
-
-            <!-- Display form errors -->
-            {% if form.non_field_errors %}
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    {% for error in form.non_field_errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
             <div class="rounded-md shadow-sm -space-y-px">
                 <div>
                     <label for="{{ form.username.id_for_label }}" class="sr-only">Username</label>
-                    <input
-                        id="{{ form.username.id_for_label }}"
-                        name="{{ form.username.name }}"
-                        type="text"
-                        required
-                        class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                        placeholder="Username"
-                        value="{{ form.username.value|default_if_none:'' }}"
-                    >
-                    {% if form.username.errors %}
-                        <div class="text-red-600 text-xs mt-1">
-                            {% for error in form.username.errors %}
-                                <p>{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                    {{ form.username|add_class:"relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"|attr:"placeholder:Username" }}
                 </div>
                 <div>
                     <label for="{{ form.password.id_for_label }}" class="sr-only">Password</label>
-                    <input
-                        id="{{ form.password.id_for_label }}"
-                        name="{{ form.password.name }}"
-                        type="password"
-                        required
-                        class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                        placeholder="Password"
-                    >
-                    {% if form.password.errors %}
-                        <div class="text-red-600 text-xs mt-1">
-                            {% for error in form.password.errors %}
-                                <p>{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                    {{ form.password|add_class:"relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"|attr:"placeholder:Password" }}
                 </div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="rounded-md bg-red-50 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                {{ form.non_field_errors.0 }}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Login
+                </button>
             </div>
 
             <div class="flex items-center justify-between">
                 <div class="text-sm">
-                    <a href="{% url 'register' %}" class="font-medium text-primary hover:text-primary-dark">
+                    <a href="{% url 'data_management:register' %}" class="font-medium text-primary hover:text-primary-dark">
                         Belum punya akun? Daftar
                     </a>
                 </div>
+            </div>
+
+            <div class="text-center">
                 <div class="text-sm">
-                    <a href="{% url 'staff_login' %}" class="font-medium text-primary hover:text-primary-dark">
-                        Login sebagai staff
+                    <a href="{% url 'data_management:staff_login' %}" class="font-medium text-primary hover:text-primary-dark">
+                        Login sebagai Staff
                     </a>
                 </div>
             </div>
-
-            <div>
-                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150 ease-in-out">
-                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-primary-light group-hover:text-primary-lighter" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
-                    Masuk
-                </button>
-            </div>
         </form>
-
-        <div class="text-center">
-            <div class="text-sm text-gray-600">
-                <p>© 2025 Kesepakan Mahasiswa Minangkabau Mesir</p>
-            </div>
-        </div>
     </div>
 </div>
-
-<!-- Custom CSS for primary colors -->
-<style>
-.bg-primary {
-    background-color: #3B82F6;
-}
-.text-primary {
-    color: #3B82F6;
-}
-.hover\:text-primary-dark:hover {
-    color: #2563EB;
-}
-.bg-primary:hover,
-.hover\:bg-primary-dark:hover {
-    background-color: #2563EB;
-}
-.focus\:ring-primary:focus {
-    --tw-ring-color: #3B82F6;
-}
-.focus\:border-primary:focus {
-    border-color: #3B82F6;
-}
-.text-primary-light {
-    color: #60A5FA;
-}
-.group:hover .group-hover\:text-primary-lighter {
-    color: #93C5FD;
-}
-</style>
 {% endblock %}

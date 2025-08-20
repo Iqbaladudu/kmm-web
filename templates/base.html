@@ -19,6 +19,50 @@
       }
       .skip-link { position:absolute; left:-999px; top:auto; width:1px; height:1px; overflow:hidden; }
       .skip-link:focus { left:8px; top:8px; width:auto; height:auto; padding:.5rem .75rem; background:#1d4ed8; color:#fff; z-index:100; border-radius:.375rem; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+
+      /* Fixed layout styles */
+      .main-content {
+        margin-left: 0;
+        margin-top: 4rem; /* Height of navbar (64px) */
+        transition: margin-left 0.3s ease;
+      }
+
+      @media (min-width: 768px) {
+        .main-content {
+          margin-left: 16rem; /* Width of sidebar (256px) */
+        }
+      }
+
+      .content-area {
+        height: calc(100vh - 4rem); /* Full height minus navbar */
+        overflow-y: auto;
+      }
+
+      /* Success notification animations */
+      .success-notification {
+        animation: slideInFromTop 0.6s ease-out;
+      }
+
+      @keyframes slideInFromTop {
+        from {
+          transform: translateY(-100px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .success-icon-bounce {
+        animation: bounceIn 0.8s ease-out;
+      }
+
+      @keyframes bounceIn {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
     </style>
     <script>
       function sidebarState(){
@@ -41,28 +85,115 @@
       }
     </script>
 </head>
-<body x-data="sidebarState()" x-init="init()" x-bind:class="sidebarOpen ? 'overflow-hidden md:overflow-visible' : ''" x-on:keydown.escape.window="close()" class="min-h-screen flex flex-col">
+<body x-data="sidebarState()" x-init="init()" x-bind:class="sidebarOpen ? 'overflow-hidden md:overflow-visible' : ''" x-on:keydown.escape.window="close()" class="min-h-screen bg-gray-50">
 <a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Success/Error Messages Notification Area -->
+{% if messages %}
+<div class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+  {% for message in messages %}
+    <div class="mb-4 success-notification rounded-xl shadow-2xl overflow-hidden
+      {% if message.tags == 'error' %}bg-red-500
+      {% elif message.tags == 'warning' %}bg-amber-500
+      {% elif message.tags == 'success' %}bg-green-500
+      {% else %}bg-blue-500{% endif %}"
+      data-autohide="true"
+      data-message-type="{{ message.tags }}"
+      x-data="{ show: true }"
+      x-show="show"
+      x-init="setTimeout(() => show = false, 5000)">
+
+      <div class="relative p-4 text-white">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+          <svg class="w-full h-full" viewBox="0 0 100 100" fill="none">
+            <defs>
+              <pattern id="success-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <circle cx="10" cy="10" r="1" fill="currentColor"/>
+              </pattern>
+            </defs>
+            <rect width="100" height="100" fill="url(#success-pattern)"/>
+          </svg>
+        </div>
+
+        <div class="relative flex items-start space-x-3">
+          <!-- Icon -->
+          <div class="flex-shrink-0 success-icon-bounce">
+            {% if message.tags == 'success' %}
+              <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+            {% elif message.tags == 'error' %}
+              <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+            {% elif message.tags == 'warning' %}
+              <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+            {% else %}
+              <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Message Content -->
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium leading-5">
+              {{ message }}
+            </div>
+          </div>
+
+          <!-- Close Button -->
+          <button type="button" @click="show = false" class="flex-shrink-0 ml-4 text-white hover:text-gray-200 transition-colors">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-white bg-opacity-20">
+          <div class="h-full bg-white bg-opacity-40"
+            x-data="{ width: 100 }"
+            x-init="
+              let duration = 5000;
+              let interval = 50;
+              let decrement = (100 * interval) / duration;
+              let timer = setInterval(() => {
+                width -= decrement;
+                if (width <= 0) {
+                  clearInterval(timer);
+                  show = false;
+                }
+              }, interval);
+            "
+            :style="'width: ' + width + '%'"
+            style="transition: width 50ms linear;">
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% block navbar %} {% endblock %}
 <!-- Mobile overlay -->
 <div x-cloak x-show="sidebarOpen" class="fixed inset-0 bg-black/40 z-40 md:hidden" @click="close()" aria-hidden="true"></div>
-<main id="main-content" class="flex-1 flex flex-col md:flex-row relative">
-  {% block sidebar %}{% endblock %}
-  <div class="flex-1 flex flex-col">
-      {% if messages %}
-      <div class="px-4 pt-4 space-y-2" id="flash-messages-wrapper">
-        {% for message in messages %}
-          <div class="flash-message relative px-4 py-2 rounded text-sm font-medium shadow border
-            {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700
-            {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-700
-            {% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-700
-            {% else %}bg-gray-50 border-gray-200 text-gray-700{% endif %}" data-autohide="true" data-message-type="{{ message.tags }}">
-            <span>{{ message }}</span>
-            <button type="button" aria-label="Close" class="absolute top-1.5 right-2 text-xs text-gray-500 hover:text-gray-700" data-close>&times;</button>
-          </div>
-        {% endfor %}
-      </div>
-      {% endif %}
+{% block sidebar %}{% endblock %}
+
+<main id="main-content" class="main-content">
+  <div class="content-area">
       {% block content %}{% endblock %}
   </div>
 </main>

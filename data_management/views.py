@@ -37,7 +37,7 @@ def dashboard(request):
         else:
             logger.info(f"Regular user accessed dashboard - User: {user_info['username']}")
 
-        return redirect("profile")
+        return redirect("data_management:profile")
     except Exception as e:
         logger.error(f"Dashboard view error - User: {request.user.username}, Error: {str(e)}", exc_info=True)
         raise
@@ -136,13 +136,15 @@ class StudentDataUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         action = self.request.POST.get('action', 'save')
         # Capture previous values before save for change detection
-        previous_values = {f: getattr(self.get_object(), f) for f in self.form_class.Meta.fields if hasattr(self.get_object(), f)}
+        # Get form fields dynamically since StudentForm uses 'exclude' instead of 'fields'
+        form_fields = list(form.fields.keys())
+        previous_values = {f: getattr(self.get_object(), f) for f in form_fields if hasattr(self.get_object(), f)}
         # Set draft status based on action prior to saving
         form.instance.is_draft = (action == 'save_draft')
         response = super().form_valid(form)
         if action in ['save','save_back','save_draft']:
             changed = []
-            for f in self.form_class.Meta.fields:
+            for f in form_fields:
                 if not hasattr(self.object, f):
                     continue
                 if previous_values.get(f) != getattr(self.object, f):
@@ -191,7 +193,13 @@ def register(request):
                     success=True
                 )
 
-                return redirect('login')
+                # Add success message for registration
+                messages.success(
+                    request,
+                    f'Pendaftaran berhasil! Selamat datang {user.get_full_name() or username}. Silakan login dengan akun yang telah dibuat.'
+                )
+
+                return redirect('data_management:login')
             else:
                 # Log failed registration
                 audit_logger.log_user_registration(
@@ -236,7 +244,13 @@ def user_login(request):
                         is_staff=False
                     )
 
-                    return redirect('dashboard/profile')
+                    # Add success message for login
+                    messages.success(
+                        request,
+                        f'Selamat datang kembali, {user.get_full_name() or user.username}! Login berhasil.'
+                    )
+
+                    return redirect('data_management:dashboard')
                 else:
                     # Log failed login
                     security_logger.log_login_attempt(
@@ -285,7 +299,13 @@ def staff_login(request):
                         is_staff=True
                     )
 
-                    return redirect('dashboard')
+                    # Add success message for staff login
+                    messages.success(
+                        request,
+                        f'Selamat datang, {user.get_full_name() or user.username}! Login staff berhasil.'
+                    )
+
+                    return redirect('data_management:dashboard')
                 else:
                     if user is not None:
                         # Non-staff user attempted staff login
@@ -477,13 +497,15 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         action = self.request.POST.get('action', 'save')
         # Capture previous values before save for change detection
-        previous_values = {f: getattr(self.get_object(), f) for f in self.form_class.Meta.fields if hasattr(self.get_object(), f)}
+        # Get form fields dynamically since StudentForm uses 'exclude' instead of 'fields'
+        form_fields = list(form.fields.keys())
+        previous_values = {f: getattr(self.get_object(), f) for f in form_fields if hasattr(self.get_object(), f)}
         # Set draft status based on action prior to saving
         form.instance.is_draft = (action == 'save_draft')
         response = super().form_valid(form)
         if action in ['save','save_back','save_draft']:
             changed = []
-            for f in self.form_class.Meta.fields:
+            for f in form_fields:
                 if not hasattr(self.object, f):
                     continue
                 if previous_values.get(f) != getattr(self.object, f):
@@ -791,7 +813,7 @@ def staff_student_reset_password(request, pk):
         record_id=str(user.pk),
         success=True
     )
-    return redirect('staff_student_detail', pk=student.pk)
+    return redirect('data_management:staff_student_detail', pk=student.pk)
 
 class StaffStudentDeleteView(LoginRequiredMixin, DeleteView):
     model = Student
@@ -837,7 +859,7 @@ def user_logout(request):
     Adds success flash message after logout.
     """
     if request.method != 'POST':
-        return redirect('dashboard') if request.user.is_authenticated else redirect('login')
+        return redirect('data_management:dashboard') if request.user.is_authenticated else redirect('data_management:login')
     was_staff = False
     if request.user.is_authenticated:
         was_staff = request.user.is_staff or request.user.groups.filter(name="data_management_staff").exists()
@@ -845,4 +867,4 @@ def user_logout(request):
     logout(request)
     # Add success message on new (clean) session after logout
     messages.success(request, 'Berhasil logout.')
-    return redirect('staff_login' if was_staff else 'login')
+    return redirect('data_management:staff_login' if was_staff else 'data_management:login')

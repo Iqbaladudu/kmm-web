@@ -21,7 +21,7 @@ class AuthRedirectMiddleware:
             path = request.path
             if path in ('/','/staff/','/register/'):
                 is_staff = request.user.is_staff or request.user.groups.filter(name="data_management_staff").exists()
-                target_name = 'dashboard' if is_staff else 'profile'
+                target_name = 'data_management:dashboard' if is_staff else 'data_management:profile'
                 target_path = reverse(target_name)
                 logger.info(
                     "[AuthRedirectMiddleware] redirect user=%s staff=%s from=%s to=%s",

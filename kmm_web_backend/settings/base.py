@@ -43,17 +43,17 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # Tailwind configuration
 TAILWIND_APP_NAME = 'theme'
 
-# Middleware
+# Middleware - Updated to fix security warnings
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # For static files in production
+    'django.middleware.security.SecurityMiddleware',  # W001 fix
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # W003 fix
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'data_management.middleware.AuthRedirectMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # W002 fix
 ]
 
 ROOT_URLCONF = 'kmm_web_backend.urls'

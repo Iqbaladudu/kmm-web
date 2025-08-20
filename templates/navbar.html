@@ -1,33 +1,63 @@
-<nav class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200 h-14 px-3 flex items-center justify-between" aria-label="Navbar">
-  <!-- Left section: hamburger + brand -->
-  <div class="flex items-center gap-2">
-    <button type="button" data-sidebar-toggle aria-controls="app-sidebar" class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Toggle sidebar" aria-expanded="false" @click="sidebarOpen = !sidebarOpen" x-bind:aria-expanded="sidebarOpen.toString()">
-      <svg x-show="!sidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-      <svg x-show="sidebarOpen" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-    </button>
-    <a href="{% if user.is_authenticated and user.is_staff %}{% url 'dashboard' %}{% elif user.is_authenticated %}{% url 'profile' %}{% else %}{% url 'login' %}{% endif %}" class="flex items-center gap-2 font-semibold text-gray-800 text-sm sm:text-base">
-      <span class="tracking-wide">KMM Mesir</span>
-    </a>
-  </div>
-  <!-- Center (optional nav links hidden on mobile) -->
-  <div class="hidden md:flex items-center gap-6 text-sm text-gray-600">
-    <a href="#" class="hover:text-gray-900">Data</a>
-    <a href="#" class="hover:text-gray-900">Ruwaq</a>
-  </div>
-  <!-- Right user actions -->
-  <div class="flex items-center gap-3">
-    {% if user.is_authenticated %}
-      <span class="hidden sm:inline text-xs font-medium text-gray-600">{{ user.username }}</span>
-      <form method="post" action="{% url 'logout' %}" class="m-0" onsubmit="return confirm('Logout dari akun ini?');">
-        {% csrf_token %}
-        <button type="submit" class="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">Logout</button>
-      </form>
-    {% else %}
-      <a href="{% url 'login' %}" class="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">Login</a>
-    {% endif %}
-    <div class="relative">
-      <div class="w-9 h-9 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-500 text-sm select-none">
-        {% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}U{% endif %}
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="px-4 lg:px-6 py-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <!-- Mobile menu button -->
+        <button
+          @click="toggle()"
+          data-sidebar-toggle
+          class="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-controls="sidebar"
+          aria-expanded="false"
+        >
+          <span class="sr-only">Open sidebar</span>
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+
+        <!-- Logo/Brand -->
+        <a href="/" class="flex ml-2 md:mr-24">
+          <span class="self-center text-xl font-semibold text-gray-900 whitespace-nowrap">KMM Mesir</span>
+        </a>
+      </div>
+
+      <!-- Right side items -->
+      <div class="flex items-center space-x-4">
+        <!-- User menu dropdown -->
+        <div class="relative" x-data="{ open: false }">
+          <button @click="open = !open" type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300">
+            <span class="sr-only">Open user menu</span>
+            <img class="w-8 h-8 rounded-full" src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=3b82f6&color=fff" alt="user photo">
+          </button>
+
+          <!-- Dropdown menu -->
+          <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 z-50 my-4 text-base list-none bg-white divide-y divide-gray-100 rounded shadow-lg w-44">
+            <div class="px-4 py-3" role="none">
+              <p class="text-sm text-gray-900" role="none">
+                {{ user.get_full_name|default:user.username }}
+              </p>
+              <p class="text-sm font-medium text-gray-500 truncate" role="none">
+                {{ user.email }}
+              </p>
+            </div>
+            <ul class="py-1" role="none">
+              <li>
+                <a href="{% url 'data_management:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+              </li>
+              <li>
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+              </li>
+              <li>
+                <!-- Changed from link to form for proper POST logout -->
+                <form method="post" action="{% url 'data_management:logout' %}" class="block">
+                  {% csrf_token %}
+                  <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>

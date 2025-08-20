@@ -15,7 +15,7 @@
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <h1 class="text-2xl font-bold text-gray-800">Daftar Mahasiswa</h1>
     <div class="flex items-center gap-3 flex-wrap">
-      <a href="{% url 'staff_student_create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium shadow-sm">+ Tambah Data</a>
+      <a href="{% url 'data_management:staff_student_create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium shadow-sm">+ Tambah Data</a>
       <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border transition {% if is_filtered %}bg-blue-50 text-blue-700 border-blue-200{% else %}bg-gray-100 text-gray-600 border-gray-300{% endif %}">
         Menampilkan <span class="font-bold">{{ filtered_students }}</span> dari <span class="font-bold">{{ total_students }}</span> mahasiswa
         {% if is_filtered %}
@@ -24,7 +24,7 @@
           <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-400 text-white">All</span>
         {% endif %}
       </span>
-      <a href="{% url 'export_students_csv' %}?{{ base_filter_query }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium shadow-sm">Export CSV</a>
+      <a href="{% url 'data_management:export_students_csv' %}?{{ base_filter_query }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium shadow-sm">Export CSV</a>
       <button id="copyCsvBtn" type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium shadow-sm">Copy CSV</button>
       {% if is_filtered %}
         <a href="?" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm font-medium">Clear Filters</a>
@@ -139,7 +139,7 @@
           {% for s in students %}
           <tr class="hover:bg-gray-50 {% if s.is_draft %}opacity-90{% endif %}">
             <td class="px-4 py-3 font-medium text-gray-800 flex items-center gap-2">
-              <a href="{% url 'staff_student_detail' s.pk %}" class="text-blue-600 hover:underline">{{ s.full_name }}</a>
+              <a href="{% url 'data_management:staff_student_detail' s.pk %}" class="text-blue-600 hover:underline">{{ s.full_name }}</a>
               {% if s.is_draft %}<span class="px-2 py-0.5 text-[10px] rounded bg-amber-500 text-white">Draft</span>{% endif %}
             </td>
             <td class="px-4 py-3">{{ s.email }}</td>
@@ -152,8 +152,8 @@
             <td class="px-4 py-3">{{ s.get_level_display }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
-                <a href="{% url 'staff_student_edit' s.pk %}?next={{ request.get_full_path|urlencode }}" class="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700">Edit</a>
-                <a href="{% url 'staff_student_delete' s.pk %}" class="px-3 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700" onclick="return confirm('Buka halaman konfirmasi hapus untuk {{ s.full_name }}?');">Hapus</a>
+                <a href="{% url 'data_management:staff_student_edit' s.pk %}?next={{ request.get_full_path|urlencode }}" class="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700">Edit</a>
+                <a href="{% url 'data_management:staff_student_delete' s.pk %}" class="px-3 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700" onclick="return confirm('Buka halaman konfirmasi hapus untuk {{ s.full_name }}?');">Hapus</a>
               </div>
             </td>
           </tr>
@@ -211,7 +211,7 @@
       const original = btn.textContent;
       btn.textContent = 'Memproses...';
       try {
-        const resp = await fetch("{% url 'export_students_csv' %}?{{ base_filter_query }}");
+        const resp = await fetch("{% url 'data_management:export_students_csv' %}?{{ base_filter_query }}");
         if(!resp.ok) throw new Error('Gagal fetch CSV');
         const text = await resp.text();
         await navigator.clipboard.writeText(text);

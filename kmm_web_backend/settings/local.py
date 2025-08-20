@@ -7,8 +7,11 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Development hosts
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+# Development hosts - W020 fix
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+
+# Development SECRET_KEY - W009 fix (generate a proper one for dev)
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-that-is-long-enough-and-secure-for-development-use-only-change-in-production-50-chars-minimum')
 
 # Add development-only apps
 INSTALLED_APPS += [

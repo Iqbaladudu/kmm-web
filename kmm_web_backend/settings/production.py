@@ -9,17 +9,17 @@ import dj_database_url
 from .base import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-
-
-# Production hosts - MUST be configured via environment variables
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
-    raise ValueError("ALLOWED_HOSTS must be set in production environment")
+DEBUG = False
 
 # Security settings
 SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY must be set in production environment")
+if not SECRET_KEY or len(SECRET_KEY) < 50:
+    raise ValueError("SECRET_KEY must be set and be at least 50 characters long in production")
+
+# Production hosts - MUST be configured via environment variables
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+if not ALLOWED_HOSTS or ALLOWED_HOSTS == [''] or ALLOWED_HOSTS == ['']:
+    raise ValueError("ALLOWED_HOSTS must be set in production environment")
 
 # Database - Use PostgreSQL in production
 DATABASES = {
