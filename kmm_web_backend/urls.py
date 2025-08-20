@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from data_management.health_checks import HealthCheckView, ReadinessCheckView, LivenessCheckView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,3 +29,10 @@ if settings.DEBUG:
     urlpatterns += [
         path("__reload__/", include("django_browser_reload.urls")),
     ]
+
+# Add health check URLs at the end of urlpatterns
+urlpatterns += [
+    path('health/', HealthCheckView.as_view(), name='health_check'),
+    path('ready/', ReadinessCheckView.as_view(), name='readiness_check'),
+    path('alive/', LivenessCheckView.as_view(), name='liveness_check'),
+]
