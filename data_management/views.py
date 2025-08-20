@@ -1,13 +1,21 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import DetailView, UpdateView, ListView
+from django.views.generic import DetailView, UpdateView, ListView, CreateView, DeleteView
 from django.http import Http404, HttpResponse
 from django.urls import reverse_lazy
 from django.utils.http import urlencode
+from django.contrib.auth import get_user_model
+from django.utils.text import slugify
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.crypto import get_random_string
+import secrets
+from django.contrib import messages
+from django.db import transaction
 
-from .forms import UserRegistrationForm, UserLoginForm, StudentForm, StaffStudentForm
-from django.contrib.auth import authenticate, login
+from .forms import UserRegistrationForm, UserLoginForm, StudentForm, StaffStudentForm, StaffStudentCreateForm
+from django.contrib.auth import authenticate, login, logout
 
 from .models import Student
 from .utils.logging_utils import security_logger, audit_logger, get_user_info, log_user_action
@@ -29,7 +37,7 @@ def dashboard(request):
         else:
             logger.info(f"Regular user accessed dashboard - User: {user_info['username']}")
 
-        return render(request, 'dashboard/dashboard.html')
+        return redirect("profile")
     except Exception as e:
         logger.error(f"Dashboard view error - User: {request.user.username}, Error: {str(e)}", exc_info=True)
         raise
@@ -41,17 +49,22 @@ class StudentDataDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'student_data'
 
     def dispatch(self, request, *args, **kwargs):
-        """Override dispatch to add logging."""
+        """Override dispatch                                            to add logging."""
         user_info = get_user_info(request)
         logger.info(f"Student data detail view accessed - User: {user_info['username']}, IP: {user_info['ip']}")
+        # Removed redirect so staff remain on profile page with summary
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
-        """Get student data for the authenticated user."""
+        """Get student data for the authenticated user unless staff (staff sees only basic user info)."""
         try:
-            logger.info(f"Student data detail requested - User: {self.request.user.username}")
-            student_data = self.model.objects.get(user=self.request.user)
-            logger.info(f"Student data retrieved successfully - User: {self.request.user.username}")
+            user = self.request.user
+            if user.is_staff or user.groups.filter(name="data_management_staff").exists():
+                logger.info("Student data detail skipped for staff user=%s", user.username)
+                return None
+            logger.info(f"Student data detail requested - User: {user.username}")
+            student_data = self.model.objects.get(user=user)
+            logger.info(f"Student data retrieved successfully - User: {user.username}")
             return student_data
         except self.model.DoesNotExist:
             logger.warning(f"Student data not found - User: {self.request.user.username}")
@@ -59,6 +72,14 @@ class StudentDataDetailView(LoginRequiredMixin, DetailView):
         except Exception as e:
             logger.error(f"Error retrieving student data - User: {self.request.user.username}, Error: {str(e)}", exc_info=True)
             return None
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        is_staff = user.is_staff or user.groups.filter(name="data_management_staff").exists()
+        ctx['is_staff_view'] = is_staff
+        ctx['basic_user'] = user if is_staff else None
+        return ctx
 
 
 class StudentDataUpdateView(LoginRequiredMixin, UpdateView):
@@ -82,55 +103,65 @@ class StudentDataUpdateView(LoginRequiredMixin, UpdateView):
             logger.error(f"Error getting student object for update - User: {self.request.user.username}, Error: {str(e)}", exc_info=True)
             raise
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({
+            'basic_fields': [
+                'full_name','email','whatsapp_number','birth_place','birth_date','gender',
+                'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
+            ],
+            'academic_fields': [
+                'institution','faculty','major','degree_level','semester_level','latest_grade','level'
+            ],
+            'identity_extra_fields': [
+                'passport_number','nik','lapdik_number','arrival_date','school_origin','umdah_name','umdah_phone','home_name','home_location'
+            ],
+            'health_fields': ['disease_history','disease_status'],
+            'interest_field_pairs': [
+                ('sport_interest','sport_achievement'),
+                ('art_interest','art_achievement'),
+                ('literacy_interest','literacy_achievement'),
+                ('science_interest','science_achievement'),
+                ('mtq_interest','mtq_achievement'),
+                ('media_interest','media_achievement'),
+            ],
+            'financial_fields': [
+                'education_funding', 'scholarship_source', 'living_cost', 'monthly_income'
+            ],
+            'organization_field': 'organization_history',
+            'photo_field': 'photo',
+        })
+        return ctx
+
     def form_valid(self, form):
-        """Handle valid form submission."""
-        try:
-            # Get changed fields for audit logging
-            changed_fields = []
-            if form.changed_data:
-                changed_fields = form.changed_data
-
-            response = super().form_valid(form)
-
-            # Log successful update with audit trail
-            audit_logger.log_profile_update(
-                request=self.request,
-                updated_fields=changed_fields,
-                success=True
-            )
-
-            security_logger.log_data_modification(
-                request=self.request,
-                action="UPDATE",
-                model="Student",
-                record_id=str(self.object.id),
-                success=True
-            )
-
-            return response
-        except Exception as e:
-            # Log failed update
-            audit_logger.log_profile_update(
-                request=self.request,
-                updated_fields=form.changed_data if hasattr(form, 'changed_data') else [],
-                success=False,
-                errors={'general': str(e)}
-            )
-
-            logger.error(f"Error updating student data - User: {self.request.user.username}, Error: {str(e)}", exc_info=True)
-            raise
-
-    def form_invalid(self, form):
-        """Handle invalid form submission."""
-        # Log invalid form with audit trail
-        audit_logger.log_profile_update(
-            request=self.request,
-            updated_fields=form.changed_data if hasattr(form, 'changed_data') else [],
-            success=False,
-            errors=dict(form.errors)
-        )
-
-        return super().form_invalid(form)
+        action = self.request.POST.get('action', 'save')
+        # Capture previous values before save for change detection
+        previous_values = {f: getattr(self.get_object(), f) for f in self.form_class.Meta.fields if hasattr(self.get_object(), f)}
+        # Set draft status based on action prior to saving
+        form.instance.is_draft = (action == 'save_draft')
+        response = super().form_valid(form)
+        if action in ['save','save_back','save_draft']:
+            changed = []
+            for f in self.form_class.Meta.fields:
+                if not hasattr(self.object, f):
+                    continue
+                if previous_values.get(f) != getattr(self.object, f):
+                    changed.append(f)
+            if changed:
+                audit_logger.log_profile_update(
+                    request=self.request,
+                    updated_fields=changed,
+                    success=True,
+                    errors=None
+                )
+                security_logger.log_data_modification(
+                    request=self.request,
+                    action="UPDATE" if not self.object.is_draft else "UPDATE_DRAFT",
+                    model="Student",
+                    record_id=str(self.object.pk),
+                    success=True
+                )
+        return response
 
 
 def register(request):
@@ -388,6 +419,16 @@ class StaffStudentDetailView(LoginRequiredMixin, DetailView):
             raise Http404()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        creds = self.request.session.pop('new_student_credentials', None)
+        if creds:
+            ctx['new_student_credentials'] = creds
+        reset_creds = self.request.session.pop('reset_student_credentials', None)
+        if reset_creds:
+            ctx['reset_student_credentials'] = reset_creds
+        return ctx
+
 
 class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
     model = Student
@@ -411,7 +452,7 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
         ctx.update({
             'basic_fields': [
                 'full_name','email','whatsapp_number','birth_place','birth_date','gender',
-                'marital_status','citizenship_status','region_origin','parents_name'
+                'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
             ],
             'academic_fields': [
                 'institution','faculty','major','degree_level','semester_level','latest_grade','level'
@@ -433,41 +474,29 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
         })
         return ctx
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        previous_values = {f: getattr(self.object, f) for f in self.form_class.Meta.fields if hasattr(self.object, f)}
-        action = request.POST.get('action', 'save')
-        # Adjust draft flag before form validation
-        mutable_post = request.POST.copy()
-        if action == 'save_draft':
-            mutable_post['is_draft'] = 'on'
-        else:
-            # publishing clears draft flag
-            mutable_post['is_draft'] = ''
-        request.POST = mutable_post
-        response = super().post(request, *args, **kwargs)
-        if self.object and not isinstance(response, HttpResponse):
-            # If form invalid, HttpResponse returned; skip logging changes
-            return response
-        if self.object and action in ['save','save_back','save_draft']:
-            # Determine changed fields
+    def form_valid(self, form):
+        action = self.request.POST.get('action', 'save')
+        # Capture previous values before save for change detection
+        previous_values = {f: getattr(self.get_object(), f) for f in self.form_class.Meta.fields if hasattr(self.get_object(), f)}
+        # Set draft status based on action prior to saving
+        form.instance.is_draft = (action == 'save_draft')
+        response = super().form_valid(form)
+        if action in ['save','save_back','save_draft']:
             changed = []
             for f in self.form_class.Meta.fields:
                 if not hasattr(self.object, f):
                     continue
-                old = previous_values.get(f)
-                new = getattr(self.object, f)
-                if old != new:
+                if previous_values.get(f) != getattr(self.object, f):
                     changed.append(f)
             if changed:
                 audit_logger.log_profile_update(
-                    request=request,
+                    request=self.request,
                     updated_fields=changed,
                     success=True,
                     errors=None
                 )
                 security_logger.log_data_modification(
-                    request=request,
+                    request=self.request,
                     action="UPDATE" if not self.object.is_draft else "UPDATE_DRAFT",
                     model="Student",
                     record_id=str(self.object.pk),
@@ -487,6 +516,186 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
         if next_param:
             return next_param
         return reverse_lazy('staff_student_detail', kwargs={'pk': self.object.pk})
+
+
+class StaffStudentCreateView(LoginRequiredMixin, CreateView):
+    model = Student
+    form_class = StaffStudentCreateForm
+    template_name = 'dashboard/staff/staff_student_create_form.html'
+    context_object_name = 'student'
+
+    def dispatch(self, request, *args, **kwargs):
+        logger.info("[StaffStudentCreateView] dispatch start user=%s path=%s", request.user.username, request.path)
+        if not request.user.groups.filter(name="data_management_staff").exists():
+            logger.warning("[StaffStudentCreateView] access denied user=%s not in staff group", request.user.username)
+            security_logger.log_access_attempt(
+                request=request,
+                resource="Staff Student Create",
+                granted=False,
+                reason="User is not a staff member"
+            )
+            raise Http404()
+        security_logger.log_access_attempt(
+            request=request,
+            resource="Staff Student Create",
+            granted=True
+        )
+        logger.info("[StaffStudentCreateView] access granted user=%s", request.user.username)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update({
+            'basic_fields': [
+                'full_name','email','whatsapp_number','birth_place','birth_date','gender',
+                'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
+            ],
+            'academic_fields': [
+                'institution','faculty','major','degree_level','semester_level','latest_grade','level'
+            ],
+            'identity_extra_fields': [
+                'passport_number','nik','lapdik_number','arrival_date','school_origin','home_name','home_location'
+            ],
+            'health_fields': ['disease_history','disease_status'],
+            'interest_field_pairs': [
+                ('sport_interest','sport_achievement'),
+                ('art_interest','art_achievement'),
+                ('literacy_interest','literacy_achievement'),
+                ('science_interest','science_achievement'),
+                ('mtq_interest','mtq_achievement'),
+                ('media_interest','media_achievement'),
+            ],
+            'organization_field': 'organization_history',
+            'next_url': self.request.GET.get('next') or self.request.POST.get('next') or ''
+        })
+        return ctx
+
+    def form_valid(self, form):
+        action = self.request.POST.get('action', 'save')
+        logger.info(
+            "[StaffStudentCreateView] form_valid start user=%s action=%s draft=%s incoming_fields=%s",
+            self.request.user.username, action, (action == 'save_draft'), list(form.cleaned_data.keys())
+        )
+        form.instance.is_draft = (action == 'save_draft')
+        try:
+            with transaction.atomic():
+                pending_student = form.instance
+                User = get_user_model()
+                base_username_source = pending_student.email.split('@')[0] if pending_student.email else pending_student.full_name.split()[0]
+                base_username = slugify(base_username_source) or 'user'
+                username = base_username
+                i = 1
+                while User.objects.filter(username=username).exists():
+                    i += 1
+                    username = f"{base_username}{i}"
+                logger.info("[StaffStudentCreateView] generated username=%s base=%s", username, base_username)
+                password_plain = get_random_string(12)
+                parts = pending_student.full_name.split()
+                first_name = parts[0][:30]
+                last_name = ' '.join(parts[1:])[:150] if len(parts) > 1 else ''
+                user = User(username=username, email=pending_student.email, first_name=first_name, last_name=last_name)
+                user.set_password(password_plain)
+                user.save()
+                logger.info("[StaffStudentCreateView] user created id=%s email=%s", user.id, user.email)
+                existing_student = Student.objects.filter(user=user).first()
+                if existing_student:
+                    logger.info("[StaffStudentCreateView] reusing signal-created student id=%s", existing_student.id)
+                    updated_fields = []
+                    for field in form.fields.keys():
+                        if hasattr(existing_student, field) and field in form.cleaned_data:
+                            old_val = getattr(existing_student, field)
+                            new_val = form.cleaned_data[field]
+                            if old_val != new_val:
+                                updated_fields.append(field)
+                                setattr(existing_student, field, new_val)
+                    existing_student.is_draft = pending_student.is_draft
+                    existing_student.save()
+                    logger.info("[StaffStudentCreateView] student updated id=%s changed_fields=%s", existing_student.id, updated_fields)
+                    self.object = existing_student
+                else:
+                    logger.warning("[StaffStudentCreateView] no signal-created student found; using fallback creation path")
+                    pending_student.user = user
+                    response = super().form_valid(form)
+                    self.object = form.instance
+                    logger.info("[StaffStudentCreateView] fallback student created id=%s", self.object.id)
+                self.request.session['new_student_credentials'] = {
+                    'username': user.username,
+                    'password': password_plain,
+                    'student_id': str(self.object.pk)
+                }
+                logger.info("[StaffStudentCreateView] credentials stored in session for student_id=%s", self.object.pk)
+                if self.object.email:
+                    try:
+                        login_url = self.request.build_absolute_uri('/')
+                        message = (
+                            f"Halo {self.object.full_name},\n\n"
+                            f"Akun Anda telah dibuat di sistem KMM Mesir.\n\n"
+                            f"Username: {user.username}\nPassword: {password_plain}\n\n"
+                            f"Silakan login di: {login_url}\nSegera ganti password setelah login.\n\n"
+                            f"Terima kasih."
+                        )
+                        send_mail(
+                            subject='Akun KMM Mesir Anda',
+                            message=message,
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[self.object.email],
+                            fail_silently=True
+                        )
+                        logger.info("[StaffStudentCreateView] credential email queued to %s", self.object.email)
+                    except Exception as mail_exc:
+                        logger.error("[StaffStudentCreateView] email send failure student_id=%s error=%s", self.object.pk, mail_exc, exc_info=True)
+                security_logger.log_data_modification(
+                    request=self.request,
+                    action="CREATE",
+                    model="User",
+                    record_id=str(user.pk),
+                    success=True
+                )
+                audit_logger.log_profile_update(
+                    request=self.request,
+                    updated_fields=list(form.cleaned_data.keys()),
+                    success=True
+                )
+                security_logger.log_data_modification(
+                    request=self.request,
+                    action="CREATE_DRAFT" if self.object.is_draft else "CREATE",
+                    model="Student",
+                    record_id=str(self.object.id),
+                    success=True
+                )
+            if existing_student:
+                target_url = self.get_success_url()
+                logger.info("[StaffStudentCreateView] redirecting (reuse path) student_id=%s to %s", self.object.pk, target_url)
+                return redirect(target_url)
+            logger.info("[StaffStudentCreateView] redirecting (fallback path) student_id=%s", self.object.pk)
+            return response
+        except Exception as e:
+            logger.error("[StaffStudentCreateView] form_valid exception user=%s error=%s", self.request.user.username, e, exc_info=True)
+            audit_logger.log_profile_update(
+                request=self.request,
+                updated_fields=list(getattr(form, 'cleaned_data', {}).keys()),
+                success=False,
+                errors={'general': str(e)}
+            )
+            raise
+
+    def get_success_url(self):
+        action = self.request.POST.get('action') or self.request.GET.get('action')
+        if action == 'save_back':
+            url = self.request.POST.get('next') or self.request.GET.get('next') or reverse_lazy('staff_student_list')
+            logger.info("[StaffStudentCreateView] get_success_url action=save_back url=%s", url)
+            return url
+        if action == 'save_draft':
+            url = reverse_lazy('staff_student_edit', kwargs={'pk': self.object.pk})
+            logger.info("[StaffStudentCreateView] get_success_url action=save_draft url=%s", url)
+            return url
+        next_param = self.request.GET.get('next') or self.request.POST.get('next')
+        if next_param:
+            logger.info("[StaffStudentCreateView] get_success_url next_param=%s", next_param)
+            return next_param
+        url = reverse_lazy('staff_student_detail', kwargs={'pk': self.object.pk})
+        logger.info("[StaffStudentCreateView] get_success_url default detail url=%s", url)
+        return url
 
 
 def export_students_csv(request):
@@ -536,3 +745,104 @@ def export_students_csv(request):
             s.get_level_display(),
         ])
     return response
+
+# Password reset for a student (staff action)
+@login_required
+def staff_student_reset_password(request, pk):
+    if request.method != 'POST':
+        raise Http404()
+    if not request.user.groups.filter(name="data_management_staff").exists():
+        raise Http404()
+    student = get_object_or_404(Student, pk=pk)
+    if not student.user:
+        raise Http404()
+    user = student.user
+    # Generate new secure password
+    new_password = secrets.token_urlsafe(10)
+    user.set_password(new_password)
+    user.save()
+    # Store one-time display
+    request.session['reset_student_credentials'] = {
+        'username': user.username,
+        'password': new_password,
+        'student_id': str(student.pk)
+    }
+    # Email the new password
+    if student.email:
+        try:
+            message = (
+                f"Halo {student.full_name},\n\nPassword akun Anda telah direset oleh staff.\n\n"
+                f"Username: {user.username}\nPassword baru: {new_password}\n\n"
+                f"Segera login dan ganti password ini demi keamanan.\n\nTerima kasih."
+            )
+            send_mail(
+                subject='Reset Password Akun KMM Mesir',
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[student.email],
+                fail_silently=True
+            )
+        except Exception:
+            pass
+    security_logger.log_data_modification(
+        request=request,
+        action="UPDATE",
+        model="User",
+        record_id=str(user.pk),
+        success=True
+    )
+    return redirect('staff_student_detail', pk=student.pk)
+
+class StaffStudentDeleteView(LoginRequiredMixin, DeleteView):
+    model = Student
+    template_name = 'dashboard/staff/staff_student_confirm_delete.html'
+    context_object_name = 'student'
+    success_url = reverse_lazy('staff_student_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name="data_management_staff").exists():
+            security_logger.log_access_attempt(
+                request=request,
+                resource="Staff Student Delete",
+                granted=False,
+                reason="User is not a staff member"
+            )
+            raise Http404()
+        security_logger.log_access_attempt(
+            request=request,
+            resource="Staff Student Delete",
+            granted=True
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        student_id = str(self.object.pk)
+        student_name = self.object.full_name
+        response = super().delete(request, *args, **kwargs)
+        security_logger.log_data_modification(
+            request=request,
+            action="DELETE",
+            model="Student",
+            record_id=student_id,
+            success=True
+        )
+        messages.success(request, f"Data mahasiswa '{student_name}' berhasil dihapus.")
+        return response
+
+
+def user_logout(request):
+    """Unified logout for student or staff, with security logging and proper redirect.
+    Only accepts POST for safety.
+    Adds success flash message after logout.
+    """
+    if request.method != 'POST':
+        return redirect('dashboard') if request.user.is_authenticated else redirect('login')
+    was_staff = False
+    if request.user.is_authenticated:
+        was_staff = request.user.is_staff or request.user.groups.filter(name="data_management_staff").exists()
+        security_logger.log_logout(request)
+    logout(request)
+    # Add success message on new (clean) session after logout
+    messages.success(request, 'Berhasil logout.')
+    return redirect('staff_login' if was_staff else 'login')

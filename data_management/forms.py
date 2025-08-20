@@ -65,7 +65,7 @@ class StaffLoginForm(forms.Form):
 class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
-        exclude = ['user']
+        exclude = ['user']  # Remove the temporary exclusion of financial fields
         widgets = {
             # Text inputs dengan styling konsisten
             'full_name': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
@@ -76,7 +76,7 @@ class StudentForm(forms.ModelForm):
             'gender': forms.Select(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'marital_status': forms.Select(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'citizenship_status': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
-            'region_origin': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
+            'region_origin': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary', 'id': 'region-origin-input'}),
             'parents_name': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'parents_phone': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
 
@@ -109,12 +109,6 @@ class StudentForm(forms.ModelForm):
             # Organizational History
             'organization_history': forms.Textarea(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary', 'rows': 4}),
 
-            # Financial fields
-            'education_funding': forms.Select(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
-            'scholarship_source': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
-            'living_cost': forms.NumberInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
-            'monthly_income': forms.NumberInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
-
             # Identity fields
             'passport_number': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'nik': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
@@ -129,6 +123,12 @@ class StudentForm(forms.ModelForm):
 
             # File upload
             'photo': forms.ClearableFileInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
+
+            # Financial fields
+            'education_funding': forms.Select(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
+            'scholarship_source': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
+            'living_cost': forms.NumberInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
+            'monthly_income': forms.NumberInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
         }
 
     def clean(self):
@@ -141,7 +141,7 @@ class StaffStudentForm(forms.ModelForm):
         model = Student
         fields = [
             'full_name','email','whatsapp_number','birth_place','birth_date','gender',
-            'marital_status','citizenship_status','region_origin','parents_name',
+            'marital_status','citizenship_status','region_origin','parents_name','parents_phone',
             'institution','faculty','major','degree_level','semester_level','latest_grade',
             'passport_number','nik','lapdik_number','arrival_date','school_origin',
             'home_name','home_location','level',
@@ -149,7 +149,9 @@ class StaffStudentForm(forms.ModelForm):
             'sport_interest','sport_achievement','art_interest','art_achievement',
             'literacy_interest','literacy_achievement','science_interest','science_achievement',
             'mtq_interest','mtq_achievement','media_interest','media_achievement',
-            'organization_history','is_draft'
+            'organization_history','is_draft',
+            # Financial fields
+            'education_funding','scholarship_source','living_cost','monthly_income'
         ]
         widgets = {
             # Text inputs dengan styling konsisten
@@ -160,6 +162,7 @@ class StaffStudentForm(forms.ModelForm):
             'citizenship_status': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'region_origin': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'parents_name': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
+            'parents_phone': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'institution': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'faculty': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'major': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
@@ -207,4 +210,40 @@ class StaffStudentForm(forms.ModelForm):
 
             # Disease History
             'disease_history': forms.TextInput(attrs={'class':'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
+
+            # Financial fields
+            'education_funding': forms.Select(attrs={'class':'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
+            'scholarship_source': forms.TextInput(attrs={'class':'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
+            'living_cost': forms.NumberInput(attrs={'class':'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
+            'monthly_income': forms.NumberInput(attrs={'class':'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
         }
+
+class StaffStudentCreateForm(StaffStudentForm):
+    class Meta(StaffStudentForm.Meta):
+        pass
+
+    def clean(self):
+        cleaned = super().clean()
+        # Trim whitespace for some fields
+        for f in ['full_name','email','passport_number','nik']:
+            if cleaned.get(f):
+                cleaned[f] = cleaned[f].strip()
+        # Required core fields enforcement (model might allow but we want explicit feedback)
+        required_fields = ['full_name','email','gender','marital_status','degree_level','semester_level']
+        for f in required_fields:
+            if not cleaned.get(f):
+                self.add_error(f, 'Field is required.')
+        # Semester range guard (model already has but earlier feedback)
+        sem = cleaned.get('semester_level')
+        if sem is not None and (sem < 1 or sem > 14):
+            self.add_error('semester_level','Must be between 1 and 14.')
+        from .models import Student
+        passport = cleaned.get('passport_number')
+        if passport:
+            if Student.objects.filter(passport_number=passport).exists():
+                self.add_error('passport_number','Passport already registered.')
+        nik = cleaned.get('nik')
+        if nik:
+            if Student.objects.filter(nik=nik).exists():
+                self.add_error('nik','NIK already registered.')
+        return cleaned

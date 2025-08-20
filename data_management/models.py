@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 
 class Student(models.Model):
     DEGREE_LEVEL_CHOICES = [
-        ('D3', 'D3'),
         ('S1', 'S1'),
         ('S2', 'S2'),
         ('S3', 'S3'),
@@ -27,7 +26,7 @@ class Student(models.Model):
         ('alumni', 'Alumni'),
     ]
 
-    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='student_profile', null=True, blank=True)
+    user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='student_profile')
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     full_name = models.CharField(max_length=150, db_index=True)
     passport_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
@@ -52,6 +51,7 @@ class Student(models.Model):
     home_name = models.CharField(max_length=80, blank=True)
     home_location = models.CharField(max_length=150, blank=True)
     parents_name = models.CharField(max_length=150, blank=True)
+    parents_phone = models.CharField(max_length=20, blank=True, verbose_name="Nomor Telepon Orang Tua")
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='maba', db_index=True)
     is_draft = models.BooleanField(default=False)  # indicates incomplete / draft record managed by staff
 
@@ -79,6 +79,33 @@ class Student(models.Model):
 
     # Organizational History
     organization_history = models.TextField(blank=True, verbose_name="Riwayat Organisasi")
+
+    # Financial Information
+    education_funding = models.CharField(
+        max_length=20,
+        choices=EDUCATION_FUNDING_CHOICES,
+        blank=True,
+        verbose_name="Sumber Pendanaan Pendidikan"
+    )
+    scholarship_source = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="Sumber Beasiswa"
+    )
+    living_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Biaya Hidup Bulanan"
+    )
+    monthly_income = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Pendapatan Bulanan"
+    )
 
     def clean(self):
         from django.core.exceptions import ValidationError

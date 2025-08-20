@@ -4,21 +4,128 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>{% block title %} Kesepakan Mahasiswa Minangkabau Mesir {% endblock %}</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/mask@3.x.x/dist/cdn.min.js"></script>
     {% tailwind_css %}
+    <style>
+      .flash-message { transition: opacity .5s ease, transform .5s ease; }
+      .flash-hide { opacity:0; transform: translateY(-4px); }
+      [x-cloak]{ display:none !important; }
+      .sidebar-transition { transition: transform .3s var(--ease, cubic-bezier(.4,0,.2,1)); will-change: transform; }
+      @media (prefers-reduced-motion: reduce){
+        .flash-message, .sidebar-transition { transition: none !important; }
+      }
+      .skip-link { position:absolute; left:-999px; top:auto; width:1px; height:1px; overflow:hidden; }
+      .skip-link:focus { left:8px; top:8px; width:auto; height:auto; padding:.5rem .75rem; background:#1d4ed8; color:#fff; z-index:100; border-radius:.375rem; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+    </style>
+    <script>
+      function sidebarState(){
+        return {
+          sidebarOpen:false,
+          prevFocus:null,
+          init(){
+            const persisted = localStorage.getItem('sidebarOpen');
+            if(persisted === '1' && window.innerWidth >= 768) this.sidebarOpen = true; // only auto-open on desktop
+            this.$watch('sidebarOpen', v => localStorage.setItem('sidebarOpen', v ? '1':'0'));
+            window.addEventListener('resize', ()=>{ if(window.innerWidth < 480 && this.sidebarOpen){ this.sidebarOpen = false; } });
+          },
+          toggle(){ this.sidebarOpen ? this.close() : this.open(); },
+          close(){ if(this.sidebarOpen){ this.sidebarOpen=false; this.restoreFocus(); } },
+            open(){ if(!this.sidebarOpen){ this.rememberFocus(); this.sidebarOpen=true; this.restoreSidebarScroll(); } },
+          rememberFocus(){ this.prevFocus = document.activeElement; },
+          restoreFocus(){ if(this.prevFocus && typeof this.prevFocus.focus === 'function'){ this.prevFocus.focus({preventScroll:true}); } },
+          restoreSidebarScroll(){ try{ const pos = +localStorage.getItem('sidebarScroll')||0; const sb=document.getElementById('app-sidebar-scroll'); if(sb) sb.scrollTop = pos; }catch(e){} }
+        }
+      }
+    </script>
 </head>
-<body>
+<body x-data="sidebarState()" x-init="init()" x-bind:class="sidebarOpen ? 'overflow-hidden md:overflow-visible' : ''" x-on:keydown.escape.window="close()" class="min-h-screen flex flex-col">
+<a href="#main-content" class="skip-link">Skip to main content</a>
 {% block navbar %} {% endblock %}
-<main class="{% if request.path == "/" %} {% elif request.path == "/staff/" %} {% elif request.path == "/register/" %} {% else %} flex flex-row {% endif %}">
-{% if request.path != "/" %}
-    {% block sidebar %}
-    {% endblock %}
-{% endif %}
-    {% block content %}
-    {% endblock %}
+<!-- Mobile overlay -->
+<div x-cloak x-show="sidebarOpen" class="fixed inset-0 bg-black/40 z-40 md:hidden" @click="close()" aria-hidden="true"></div>
+<main id="main-content" class="flex-1 flex flex-col md:flex-row relative">
+  {% block sidebar %}{% endblock %}
+  <div class="flex-1 flex flex-col">
+      {% if messages %}
+      <div class="px-4 pt-4 space-y-2" id="flash-messages-wrapper">
+        {% for message in messages %}
+          <div class="flash-message relative px-4 py-2 rounded text-sm font-medium shadow border
+            {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700
+            {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-700
+            {% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-700
+            {% else %}bg-gray-50 border-gray-200 text-gray-700{% endif %}" data-autohide="true" data-message-type="{{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" aria-label="Close" class="absolute top-1.5 right-2 text-xs text-gray-500 hover:text-gray-700" data-close>&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+  </div>
 </main>
+<script>
+(function flashAutoHide(){
+  const AUTOHIDE_DELAY = 4000;
+  const messages = document.querySelectorAll('.flash-message[data-autohide="true"]');
+  messages.forEach((el, idx) => {
+    const delay = AUTOHIDE_DELAY + (idx * 400);
+    const timer = setTimeout(() => hide(el), delay);
+    el.addEventListener('mouseenter', () => { clearTimeout(timer); });
+  });
+  function hide(el){ if(!el) return; el.classList.add('flash-hide'); el.addEventListener('transitionend', () => el.remove(), { once:true }); }
+  document.addEventListener('click', (e)=>{ const btn = e.target.closest('[data-close]'); if(btn){ hide(btn.closest('.flash-message')); }});
+})();
+</script>
+<script>
+(function sidebarEnhance(){
+  const body = document.body;
+  const sidebar = document.getElementById('app-sidebar');
+  if(!sidebar) return;
+  const scrollRegion = document.getElementById('app-sidebar-scroll') || sidebar;
+  // Persist scroll position
+  scrollRegion.addEventListener('scroll', () => { try{ localStorage.setItem('sidebarScroll', scrollRegion.scrollTop); }catch(e){} });
+  // Auto close after link click on mobile
+  sidebar.addEventListener('click', (e)=>{
+    if(window.innerWidth < 768){ const a = e.target.closest('a'); if(a && a.href){ if(body.__x && body.__x.$data.close){ body.__x.$data.close(); } } }
+  });
+})();
+</script>
+<script>
+// Robust focus trap using sentinels + swipe gesture support
+(function sidebarAccessibility(){
+  const body = document.body;
+  const sidebar = document.getElementById('app-sidebar');
+  const toggleBtn = document.querySelector('[data-sidebar-toggle]');
+  if(!sidebar) return;
+  // Create sentinels if not present
+  if(!sidebar.querySelector('[data-focus-start]')){
+    const start = document.createElement('div');
+    start.tabIndex = 0; start.dataset.focusStart = '1'; start.className='focus:outline-none';
+    const end = document.createElement('div');
+    end.tabIndex = 0; end.dataset.focusEnd = '1'; end.className='focus:outline-none';
+    sidebar.prepend(start); sidebar.append(end);
+  }
+  function focusFirst(){ const f = sidebar.querySelector('a, button, [tabindex]:not([tabindex="-1"])'); if(f) f.focus({preventScroll:true}); }
+  function focusLast(){ const nodes=[...sidebar.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])')]; if(nodes.length) nodes[nodes.length-1].focus({preventScroll:true}); }
+  sidebar.addEventListener('focusin', (e)=>{
+    if(e.target.dataset.focusStart){ // shift+tab from first -> go last
+      requestAnimationFrame(focusLast);
+    } else if(e.target.dataset.focusEnd){ // tab from last -> go first
+      requestAnimationFrame(focusFirst);
+    }
+  });
+  if(toggleBtn){ toggleBtn.addEventListener('click', ()=>{ setTimeout(()=>{ if(body.__x?.$data.sidebarOpen){ focusFirst(); } }, 40); }); }
+  // Observe Alpine state changes for open
+  const observer = new MutationObserver(()=>{ /* placeholder if needed */ }); observer.observe(sidebar,{attributes:true});
 
+  // Swipe gestures
+  let sx=null, sy=null, touching=false;
+  document.addEventListener('touchstart', e=>{ if(e.touches.length!==1)return; sx=e.touches[0].clientX; sy=e.touches[0].clientY; touching=true; }, {passive:true});
+  document.addEventListener('touchend', e=>{ if(!touching)return; touching=false; const dx=e.changedTouches[0].clientX - sx; const dy=Math.abs(e.changedTouches[0].clientY - sy); const st=body.__x?.$data.sidebarOpen; if(dy>60)return; if(st && dx<-60){ body.__x.$data.close(); } else if(!st && sx<30 && dx>60){ body.__x.$data.open(); } }, {passive:true});
+})();
+</script>
 </body>
 </html>

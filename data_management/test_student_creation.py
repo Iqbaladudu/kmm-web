@@ -4,20 +4,21 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from .models import Student
 
-class TestStaffStudentCreation(TestCase):
+class StudentCreationReuseSignalTest(TestCase):
     def setUp(self):
         User = get_user_model()
-        # Ensure staff group exists
         self.staff_group, _ = Group.objects.get_or_create(name="data_management_staff")
-        self.staff_user = User.objects.create_user(username='staff', email='staff@example.com', password='pass12345', is_staff=True)
+        self.staff_user = User.objects.create_user(
+            username='staff', email='staff@example.com', password='pass12345', is_staff=True
+        )
         self.staff_user.groups.add(self.staff_group)
         self.client.login(username='staff', password='pass12345')
 
-    def test_create_student_reuses_signal_student(self):
+    def test_staff_create_student_reuses_signal_created_student(self):
         url = reverse('staff_student_create')
-        post_data = {
-            'full_name': 'Jane Doe',
-            'email': 'jane@example.com',
+        payload = {
+            'full_name': 'Alice Smith',
+            'email': 'alice@example.com',
             'whatsapp_number': '',
             'birth_place': '',
             'birth_date': '',
@@ -29,8 +30,8 @@ class TestStaffStudentCreation(TestCase):
             'institution': '',
             'faculty': '',
             'major': '',
-            'degree_level': 'S2',  # different from signal default S1 to verify update
-            'semester_level': 4,   # different from signal default 1
+            'degree_level': 'S2',
+            'semester_level': 3,
             'latest_grade': '',
             'passport_number': '',
             'nik': '',
@@ -58,17 +59,14 @@ class TestStaffStudentCreation(TestCase):
             'is_draft': '',
             'action': 'save'
         }
-        pre_user_count = get_user_model().objects.count()
-        response = self.client.post(url, data=post_data, follow=False)
-        # Expect redirect (302)
-        self.assertIn(response.status_code, (302, 303))
-        # New user created
-        self.assertEqual(get_user_model().objects.count(), pre_user_count + 1)
-        # Only one student with the given email
-        students = Student.objects.filter(email='jane@example.com')
-        self.assertEqual(students.count(), 1, "Exactly one Student should exist for the created user")
-        student = students.first()
-        # Ensure updated values (not the defaults from the signal)
-        self.assertEqual(student.degree_level, 'S2')
-        self.assertEqual(student.semester_level, 4)
-        self.assertEqual(student.gender, 'F')
+        pre_users = get_user_model().objects.count()
+        resp = self.client.post(url, data=payload)
+        self.assertIn(resp.status_code, (302, 303))
+        self.assertEqual(get_user_model().objects.count(), pre_users + 1)
+        qs = Student.objects.filter(email='alice@example.com')
+        self.assertEqual(qs.count(), 1, 'Should have exactly one student linked to new user')
+        s = qs.first()
+        self.assertEqual(s.gender, 'F')
+        self.assertEqual(s.degree_level, 'S2')
+        self.assertEqual(s.semester_level, 3)
+

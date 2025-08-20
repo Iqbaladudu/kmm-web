@@ -7,14 +7,42 @@
 
 {% block content %}
 <div class="w-full p-6 space-y-6">
+  {% if new_student_credentials %}
+  <div class="p-4 rounded border border-amber-300 bg-amber-50 text-sm text-amber-800 flex flex-col gap-2">Akun baru berhasil dibuat - simpan kredensial ini sekarang.
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div><span class="text-gray-500">Username:</span> <code class="font-semibold">{{ new_student_credentials.username }}</code></div>
+      <div><span class="text-gray-500">Password:</span> <code class="font-semibold">{{ new_student_credentials.password }}</code></div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="copyCredsBtn" class="px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-700 text-white">Copy</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if reset_student_credentials %}
+  <div class="p-4 rounded border border-blue-300 bg-blue-50 text-sm text-blue-800 flex flex-col gap-2">Password telah direset.
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div><span class="text-gray-500">Username:</span> <code class="font-semibold">{{ reset_student_credentials.username }}</code></div>
+      <div><span class="text-gray-500">Password Baru:</span> <code class="font-semibold">{{ reset_student_credentials.password }}</code></div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="copyResetCredsBtn" class="px-3 py-1.5 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white">Copy</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <div class="flex items-center justify-between flex-wrap gap-4">
     <div>
       <h1 class="text-2xl font-bold text-gray-800">Detail Mahasiswa</h1>
       <p class="text-sm text-gray-500">Profil lengkap mahasiswa terdaftar.</p>
+      {% if student.user %}<p class="text-xs text-gray-500 mt-1">Akun: <span class="font-semibold">{{ student.user.username }}</span></p>{% endif %}
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 flex-wrap">
       <a href="{% url 'staff_student_list' %}" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium">← Kembali</a>
       <a href="{% url 'staff_student_edit' student.pk %}?next={{ request.get_full_path|urlencode }}" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">Edit</a>
+      <form method="post" action="{% url 'staff_student_reset_password' student.pk %}" onsubmit="return confirm('Reset password untuk akun ini?');">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium">Reset Password</button>
+      </form>
+      <a href="{% url 'staff_student_delete' student.pk %}" class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium" onclick="return confirm('Lanjut ke halaman konfirmasi hapus?');">Hapus</a>
     </div>
   </div>
 
@@ -77,6 +105,18 @@
         <div>
           <p class="text-gray-500">Wilayah Asal</p>
           <p class="font-medium">{{ student.region_origin|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">WhatsApp</p>
+          <p class="font-medium">{{ student.whatsapp_number|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Nama Orang Tua</p>
+          <p class="font-medium">{{ student.parents_name|default:'-' }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">No. Telepon Orang Tua</p>
+          <p class="font-medium">{{ student.parents_phone|default:'-' }}</p>
         </div>
         <div class="md:col-span-3">
           <p class="text-gray-500">Alamat (Home)</p>
@@ -161,4 +201,12 @@
     </div>
   </div>
 </div>
+<script>
+(function(){
+  const btn = document.getElementById('copyCredsBtn');
+  if(btn){ btn.addEventListener('click', () => { const u='{{ new_student_credentials.username|default:""|escapejs }}'; const p='{{ new_student_credentials.password|default:""|escapejs }}'; navigator.clipboard.writeText(`Username: ${u}\nPassword: ${p}`); btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy',1500); }); }
+  const btn2 = document.getElementById('copyResetCredsBtn');
+  if(btn2){ btn2.addEventListener('click', () => { const u='{{ reset_student_credentials.username|default:""|escapejs }}'; const p='{{ reset_student_credentials.password|default:""|escapejs }}'; navigator.clipboard.writeText(`Username: ${u}\nPassword: ${p}`); btn2.textContent='Copied'; setTimeout(()=>btn2.textContent='Copy',1500); }); }
+})();
+</script>
 {% endblock %}

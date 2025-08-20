@@ -138,6 +138,13 @@ class SecurityLogger:
         else:
             self.logger.warning(message)
 
+    def log_logout(self, request: HttpRequest):
+        """Log a successful logout action."""
+        user_info = get_user_info(request)
+        self.logger.info(
+            f"User logout SUCCESS - User: {user_info['username']}, IP: {user_info['ip']}"
+        )
+
     def log_access_attempt(self, request: HttpRequest, resource: str,
                           granted: bool, reason: str = ""):
         """
@@ -245,6 +252,31 @@ class AuditLogger:
             message += f", Errors: {errors}"
 
         self.logger.info(message)
+
+
+class ColorFormatter(logging.Formatter):
+    """ANSI color log formatter for console output."""
+    COLORS = {
+        'DEBUG': '\033[37m',      # White
+        'INFO': '\033[36m',       # Cyan
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[41m',   # Red background
+    }
+    RESET = '\033[0m'
+
+    def format(self, record: logging.LogRecord) -> str:
+        levelname = record.levelname
+        color = self.COLORS.get(levelname, '')
+        # Preserve original message formatting using parent
+        original_format = self._style._fmt
+        # Temporarily inject color codes around levelname and message
+        if color:
+            self._style._fmt = original_format.replace('{levelname}', f'{color}{{levelname}}{self.RESET}')
+        try:
+            return super().format(record)
+        finally:
+            self._style._fmt = original_format
 
 
 # Create singleton instances for easy import

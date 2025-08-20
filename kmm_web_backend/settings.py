@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'data_management.middleware.AuthRedirectMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -151,9 +152,9 @@ STORAGES = {
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'kmm_web_backend', 'static'),
+    BASE_DIR / 'theme' / 'static',
 ]
 
 # Default primary key field type
@@ -178,6 +179,11 @@ LOGGING = {
             'format': '{levelname} {asctime} {name} {message}',
             'style': '{',
         },
+        'color': {
+            '()': 'data_management.utils.logging_utils.ColorFormatter',
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
     },
     'filters': {
         'require_debug_false': {
@@ -192,7 +198,7 @@ LOGGING = {
             'level': 'INFO',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'color'
         },
         'file': {
             'level': 'INFO',
@@ -254,3 +260,7 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+# Email settings (basic default; override via env vars in production)
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@example.com')
