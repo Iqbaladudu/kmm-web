@@ -4,11 +4,11 @@ from .models import Student
 class StudentAdmin(admin.ModelAdmin):
 
     list_display = ('full_name', 'email', 'level', 'faculty', 'major')
-    search_fields = ('full_name', 'email', 'passport_number', 'nik')
+    search_fields = ('user__first_name', 'user__last_name', 'user__email', 'passport_number', 'nik')
     list_filter = ('level', 'faculty', 'gender', 'region_origin')
     fieldsets = (
         ('Personal Info', {
-            'fields': ('user', 'full_name', 'email', 'whatsapp_number', 'gender', 'birth_place', 'birth_date', 'marital_status', 'citizenship_status', 'region_origin')
+            'fields': ('user', 'whatsapp_number', 'gender', 'birth_place', 'birth_date', 'marital_status', 'citizenship_status', 'region_origin')
         }),
         ('Academic Info', {
             'fields': ('level', 'institution', 'faculty', 'major', 'degree_level', 'semester_level', 'latest_grade', 'school_origin')

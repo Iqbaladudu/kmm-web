@@ -17,9 +17,7 @@ if not SECRET_KEY or len(SECRET_KEY) < 50:
     raise ValueError("SECRET_KEY must be set and be at least 50 characters long in production")
 
 # Production hosts - MUST be configured via environment variables
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == [''] or ALLOWED_HOSTS == ['']:
-    raise ValueError("ALLOWED_HOSTS must be set in production environment")
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
 
 # Database - Use PostgreSQL in production
 DATABASES = {

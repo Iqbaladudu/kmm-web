@@ -30,18 +30,13 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'widget_tweaks',
-    'tailwind',
 ]
 
 LOCAL_APPS = [
     'data_management',
-    'theme',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
-
-# Tailwind configuration
-TAILWIND_APP_NAME = 'theme'
 
 # Middleware - Updated to fix security warnings
 MIDDLEWARE = [

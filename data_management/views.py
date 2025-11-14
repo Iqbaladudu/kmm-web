@@ -107,7 +107,7 @@ class StudentDataUpdateView(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx.update({
             'basic_fields': [
-                'full_name','email','whatsapp_number','birth_place','birth_date','gender',
+                'whatsapp_number','birth_place','birth_date','gender',
                 'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
             ],
             'academic_fields': [
@@ -345,8 +345,8 @@ class StaffDashboardDataListView(LoginRequiredMixin, ListView):
     template_name = 'dashboard/staff/staff_dashboard_list.html'
     context_object_name = 'students'
     paginate_by = 10
-    ordering = ['full_name']
-    allowed_sort_fields = ['full_name', 'email', 'degree_level', 'semester_level', 'faculty', 'major', 'level']
+    ordering = ['user__first_name']
+    allowed_sort_fields = ['user__first_name', 'user__email', 'degree_level', 'semester_level', 'faculty', 'major', 'level']
 
     def dispatch(self, request, *args, **kwargs):
         # Permission check
@@ -378,8 +378,9 @@ class StaffDashboardDataListView(LoginRequiredMixin, ListView):
         from django.db.models import Q
         if q:
             qs = qs.filter(
-                Q(full_name__icontains=q) |
-                Q(email__icontains=q) |
+                Q(user__first_name__icontains=q) |
+                Q(user__last_name__icontains=q) |
+                Q(user__email__icontains=q) |
                 Q(passport_number__icontains=q) |
                 Q(nik__icontains=q) |
                 Q(faculty__icontains=q) |
@@ -467,11 +468,19 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
             raise Http404()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.object and self.object.user:
+            initial['email'] = self.object.user.email
+            initial['first_name'] = self.object.user.first_name
+            initial['last_name'] = self.object.user.last_name
+        return initial
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.update({
             'basic_fields': [
-                'full_name','email','whatsapp_number','birth_place','birth_date','gender',
+                'email','first_name','last_name','whatsapp_number','birth_place','birth_date','gender',
                 'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
             ],
             'academic_fields': [
@@ -495,6 +504,13 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
         return ctx
 
     def form_valid(self, form):
+        # Save user fields first
+        if self.object and self.object.user:
+            self.object.user.email = form.cleaned_data.get('email', '')
+            self.object.user.first_name = form.cleaned_data.get('first_name', '')
+            self.object.user.last_name = form.cleaned_data.get('last_name', '')
+            self.object.user.save()
+
         action = self.request.POST.get('action', 'save')
         # Capture previous values before save for change detection
         # Get form fields dynamically since StudentForm uses 'exclude' instead of 'fields'
@@ -569,7 +585,7 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
         ctx = super().get_context_data(**kwargs)
         ctx.update({
             'basic_fields': [
-                'full_name','email','whatsapp_number','birth_place','birth_date','gender',
+                'email','first_name','last_name','whatsapp_number','birth_place','birth_date','gender',
                 'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
             ],
             'academic_fields': [
@@ -603,7 +619,14 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
             with transaction.atomic():
                 pending_student = form.instance
                 User = get_user_model()
-                base_username_source = pending_student.email.split('@')[0] if pending_student.email else pending_student.full_name.split()[0]
+
+                # Get user data from form cleaned_data
+                email = form.cleaned_data.get('email', '')
+                first_name = form.cleaned_data.get('first_name', '')
+                last_name = form.cleaned_data.get('last_name', '')
+
+                # Generate username from email or first name
+                base_username_source = email.split('@')[0] if email else first_name
                 base_username = slugify(base_username_source) or 'user'
                 username = base_username
                 i = 1
@@ -612,10 +635,9 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
                     username = f"{base_username}{i}"
                 logger.info("[StaffStudentCreateView] generated username=%s base=%s", username, base_username)
                 password_plain = get_random_string(12)
-                parts = pending_student.full_name.split()
-                first_name = parts[0][:30]
-                last_name = ' '.join(parts[1:])[:150] if len(parts) > 1 else ''
-                user = User(username=username, email=pending_student.email, first_name=first_name, last_name=last_name)
+
+                # Create user with form data
+                user = User(username=username, email=email, first_name=first_name, last_name=last_name)
                 user.set_password(password_plain)
                 user.save()
                 logger.info("[StaffStudentCreateView] user created id=%s email=%s", user.id, user.email)

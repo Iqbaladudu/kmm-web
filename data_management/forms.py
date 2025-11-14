@@ -68,8 +68,6 @@ class StudentForm(forms.ModelForm):
         exclude = ['user']  # Remove the temporary exclusion of financial fields
         widgets = {
             # Text inputs dengan styling konsisten
-            'full_name': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
-            'email': forms.EmailInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'whatsapp_number': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'birth_place': forms.TextInput(attrs={'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
             'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary'}),
@@ -137,10 +135,28 @@ class StudentForm(forms.ModelForm):
         return cleaned_data
 
 class StaffStudentForm(forms.ModelForm):
+    # User fields that are not part of Student model
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'})
+    )
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label='First Name',
+        widget=forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label='Last Name',
+        widget=forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'})
+    )
+
     class Meta:
         model = Student
         fields = [
-            'full_name','email','whatsapp_number','birth_place','birth_date','gender',
+            'whatsapp_number','birth_place','birth_date','gender',
             'marital_status','citizenship_status','region_origin','parents_name','parents_phone',
             'institution','faculty','major','degree_level','semester_level','latest_grade',
             'passport_number','nik','lapdik_number','arrival_date','school_origin',
@@ -155,8 +171,6 @@ class StaffStudentForm(forms.ModelForm):
         ]
         widgets = {
             # Text inputs dengan styling konsisten
-            'full_name': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
-            'email': forms.EmailInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'whatsapp_number': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'birth_place': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
             'citizenship_status': forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'}),
@@ -219,17 +233,35 @@ class StaffStudentForm(forms.ModelForm):
         }
 
 class StaffStudentCreateForm(StaffStudentForm):
+    # User fields that are not part of Student model
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'})
+    )
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        label='First Name',
+        widget=forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label='Last Name',
+        widget=forms.TextInput(attrs={'class': 'mt-1 w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-500 text-sm'})
+    )
+
     class Meta(StaffStudentForm.Meta):
         pass
 
     def clean(self):
         cleaned = super().clean()
         # Trim whitespace for some fields
-        for f in ['full_name','email','passport_number','nik']:
+        for f in ['passport_number','nik','email','first_name','last_name']:
             if cleaned.get(f):
                 cleaned[f] = cleaned[f].strip()
         # Required core fields enforcement (model might allow but we want explicit feedback)
-        required_fields = ['full_name','email','gender','marital_status','degree_level','semester_level']
+        required_fields = ['email','first_name','gender','marital_status','degree_level','semester_level']
         for f in required_fields:
             if not cleaned.get(f):
                 self.add_error(f, 'Field is required.')

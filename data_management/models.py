@@ -28,7 +28,6 @@ class Student(models.Model):
 
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE, related_name='student_profile')
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    full_name = models.CharField(max_length=150, db_index=True)
     passport_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     nik = models.CharField(max_length=16, unique=True, null=True, blank=True)
     lapdik_number = models.CharField(max_length=30, blank=True)
@@ -41,7 +40,6 @@ class Student(models.Model):
     marital_status = models.CharField(max_length=20, choices=MARITAL_STATUS_CHOICES, db_index=True)
     region_origin = models.CharField(max_length=80, blank=True)
     whatsapp_number = models.CharField(max_length=20, blank=True)
-    email = models.EmailField(max_length=120, unique=True)
     institution = models.CharField(max_length=120, blank=True)
     faculty = models.CharField(max_length=120, blank=True)
     major = models.CharField(max_length=120, blank=True)
@@ -113,6 +111,19 @@ class Student(models.Model):
             raise ValidationError({'semester_level': 'Semester level must be between 1 and 14.'})
 
         # Optionally, add phone number validation here
+
+    @property
+    def email(self):
+        """Get email from related user model"""
+        return self.user.email if self.user else ''
+
+    @property
+    def full_name(self):
+        """Get full name from related user model"""
+        if self.user:
+            full = f"{self.user.first_name} {self.user.last_name}".strip()
+            return full or self.user.username
+        return ''
 
     def __str__(self):
         return self.full_name
