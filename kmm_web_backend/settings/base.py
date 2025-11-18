@@ -30,10 +30,12 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'widget_tweaks',
+    'django_htmx'
 ]
 
 LOCAL_APPS = [
     'data_management',
+    'vite.apps.ViteConfig'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -49,6 +51,7 @@ MIDDLEWARE = [
     'data_management.middleware.AuthRedirectMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',  # W002 fix
+    'django_htmx.middleware.HtmxMiddleware',
 ]
 
 ROOT_URLCONF = 'kmm_web_backend.urls'
@@ -99,9 +102,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'theme' / 'static',
-]
 
 # Media files
 MEDIA_URL = '/media/'

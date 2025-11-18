@@ -11,7 +11,8 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
 
 # Development SECRET_KEY - W009 fix (generate a proper one for dev)
-SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-that-is-long-enough-and-secure-for-development-use-only-change-in-production-50-chars-minimum')
+SECRET_KEY = os.environ.get('SECRET_KEY',
+                            'dev-secret-key-that-is-long-enough-and-secure-for-development-use-only-change-in-production-50-chars-minimum')
 
 # Add development-only apps
 INSTALLED_APPS += [
@@ -52,6 +53,9 @@ CACHES = {
 # File storage for development
 STORAGES["default"]["BACKEND"] = "django.core.files.storage.FileSystemStorage"
 STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+# Vite configuration - use built files, not dev server
+VITE_DEV_MODE = False
 
 # Django Debug Toolbar (optional - uncomment if you want to use it)
 # if 'django_debug_toolbar' in INSTALLED_APPS:

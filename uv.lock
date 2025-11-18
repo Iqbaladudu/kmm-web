@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 
 [[package]]
@@ -409,6 +409,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-htmx"
+version = "1.26.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e8/ea/3d0fb10e6ebbceab57b5e228c8ae5e4ebed3b6d6767d07468923ca000fa3/django_htmx-1.26.0.tar.gz", hash = "sha256:88ecc2f8a3f13ad5a50e6b16be127f04fba369124cc40a09b21ce33babb04aa6", size = 65345, upload-time = "2025-09-22T09:23:41.582Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/fc/dbbc54af504427f5f248a73cf9a2d40bfd22631bbf042d313563acc4d223/django_htmx-1.26.0-py3-none-any.whl", hash = "sha256:3a80ffaa6df5a07e833752cd8ada7cee0fa711787841ab17a805075b1aecacc7", size = 62122, upload-time = "2025-09-22T09:23:40.18Z" },
+]
+
+[[package]]
 name = "django-import-export"
 version = "4.3.8"
 source = { registry = "https://pypi.org/simple" }
@@ -644,6 +657,7 @@ dependencies = [
     { name = "django-cors-headers" },
     { name = "django-guardian" },
     { name = "django-health-check" },
+    { name = "django-htmx" },
     { name = "django-import-export" },
     { name = "django-location-field" },
     { name = "django-redis" },
@@ -699,6 +713,7 @@ requires-dist = [
     { name = "django-extensions", marker = "extra == 'dev'", specifier = ">=3.2.3" },
     { name = "django-guardian", specifier = ">=3.0.3" },
     { name = "django-health-check", specifier = ">=3.17.0" },
+    { name = "django-htmx", specifier = ">=1.26.0" },
     { name = "django-import-export", specifier = ">=4.3.8" },
     { name = "django-location-field", specifier = ">=2.7.3" },
     { name = "django-redis", specifier = ">=5.4.0" },

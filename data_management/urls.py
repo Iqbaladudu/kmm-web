@@ -1,9 +1,15 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
+
 from . import views
 
 app_name = 'data_management'
 urlpatterns = [
     path('register/', views.register, name='register'),
+    path("reset-password/", views.password_reset_request, name='password_reset'),
+    path("reset-password/done/", auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path("reset-password/confirm/<uidb64>/<token>/", views.password_reset_confirm, name='password_reset_confirm'),
+    path("reset-password/complete/", auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     path('', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
     path('staff/', views.staff_login, name='staff_login'),
@@ -15,6 +21,8 @@ urlpatterns = [
     path('dashboard/staff/students/<uuid:pk>/', views.StaffStudentDetailView.as_view(), name='staff_student_detail'),
     path('dashboard/staff/students/export/csv/', views.export_students_csv, name='export_students_csv'),
     path('dashboard/staff/students/<uuid:pk>/edit/', views.StaffStudentUpdateView.as_view(), name='staff_student_edit'),
-    path('dashboard/staff/students/<uuid:pk>/reset-password/', views.staff_student_reset_password, name='staff_student_reset_password'),
-    path('dashboard/staff/students/<uuid:pk>/delete/', views.StaffStudentDeleteView.as_view(), name='staff_student_delete'),
+    path('dashboard/staff/students/<uuid:pk>/reset-password/', views.staff_student_reset_password,
+         name='staff_student_reset_password'),
+    path('dashboard/staff/students/<uuid:pk>/delete/', views.StaffStudentDeleteView.as_view(),
+         name='staff_student_delete'),
 ]

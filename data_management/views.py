@@ -1,29 +1,31 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import DetailView, UpdateView, ListView, CreateView, DeleteView
-from django.http import Http404, HttpResponse
-from django.urls import reverse_lazy
-from django.utils.http import urlencode
-from django.contrib.auth import get_user_model
-from django.utils.text import slugify
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils.crypto import get_random_string
+import csv
+import logging
 import secrets
+
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.mail import send_mail
 from django.db import transaction
+from django.http import Http404, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
+from django.utils.crypto import get_random_string
+from django.utils.http import urlencode
+from django.utils.text import slugify
+from django.views.generic import DetailView, UpdateView, ListView, CreateView, DeleteView
 
 from .forms import UserRegistrationForm, UserLoginForm, StudentForm, StaffStudentForm, StaffStudentCreateForm
-from django.contrib.auth import authenticate, login, logout
-
 from .models import Student
 from .utils.logging_utils import security_logger, audit_logger, get_user_info, log_user_action
-import logging
-import csv
 
 # Configure logger with proper naming convention
 logger = logging.getLogger(__name__)
+
 
 @login_required
 @log_user_action('data_management.views')
@@ -70,7 +72,8 @@ class StudentDataDetailView(LoginRequiredMixin, DetailView):
             logger.warning(f"Student data not found - User: {self.request.user.username}")
             return None
         except Exception as e:
-            logger.error(f"Error retrieving student data - User: {self.request.user.username}, Error: {str(e)}", exc_info=True)
+            logger.error(f"Error retrieving student data - User: {self.request.user.username}, Error: {str(e)}",
+                         exc_info=True)
             return None
 
     def get_context_data(self, **kwargs):
@@ -100,30 +103,34 @@ class StudentDataUpdateView(LoginRequiredMixin, UpdateView):
             logger.info(f"Student data update requested - User: {self.request.user.username}")
             return get_object_or_404(self.model, user=self.request.user)
         except Exception as e:
-            logger.error(f"Error getting student object for update - User: {self.request.user.username}, Error: {str(e)}", exc_info=True)
+            logger.error(
+                f"Error getting student object for update - User: {self.request.user.username}, Error: {str(e)}",
+                exc_info=True)
             raise
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.update({
             'basic_fields': [
-                'whatsapp_number','birth_place','birth_date','gender',
-                'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
+                'whatsapp_number', 'birth_place', 'birth_date', 'gender',
+                'marital_status', 'citizenship_status', 'region_origin', 'parents_name', 'parents_phone'
             ],
             'academic_fields': [
-                'institution','faculty','major','degree_level','semester_level','latest_grade','level'
+                'institution', 'faculty', 'major', 'degree_level', 'semester_level', 'latest_grade', 'level'
             ],
             'identity_extra_fields': [
-                'passport_number','nik','lapdik_number','arrival_date','school_origin','umdah_name','umdah_phone','home_name','home_location'
+                'passport_number', 'nik', 'lapdik_number', 'arrival_date', 'school_origin',
+                'home_name', 'home_location'
             ],
-            'health_fields': ['disease_history','disease_status'],
+            'guardian_fields': ['photo_url', 'guardian_name', 'guardian_phone'],
+            'health_fields': ['disease_history', 'disease_status'],
             'interest_field_pairs': [
-                ('sport_interest','sport_achievement'),
-                ('art_interest','art_achievement'),
-                ('literacy_interest','literacy_achievement'),
-                ('science_interest','science_achievement'),
-                ('mtq_interest','mtq_achievement'),
-                ('media_interest','media_achievement'),
+                ('sport_interest', 'sport_achievement'),
+                ('art_interest', 'art_achievement'),
+                ('literacy_interest', 'literacy_achievement'),
+                ('science_interest', 'science_achievement'),
+                ('mtq_interest', 'mtq_achievement'),
+                ('media_interest', 'media_achievement'),
             ],
             'financial_fields': [
                 'education_funding', 'scholarship_source', 'living_cost', 'monthly_income'
@@ -142,7 +149,7 @@ class StudentDataUpdateView(LoginRequiredMixin, UpdateView):
         # Set draft status based on action prior to saving
         form.instance.is_draft = (action == 'save_draft')
         response = super().form_valid(form)
-        if action in ['save','save_back','save_draft']:
+        if action in ['save', 'save_back', 'save_draft']:
             changed = []
             for f in form_fields:
                 if not hasattr(self.object, f):
@@ -221,7 +228,7 @@ def register(request):
 
 
 def user_login(request):
-    """User login view."""
+    """User login view with HTMX support."""
     user_info = get_user_info(request)
 
     if request.method == 'POST':
@@ -250,6 +257,12 @@ def user_login(request):
                         f'Selamat datang kembali, {user.get_full_name() or user.username}! Login berhasil.'
                     )
 
+                    # For HTMX requests, return redirect header
+                    if request.htmx:
+                        response = HttpResponse()
+                        response['HX-Redirect'] = reverse_lazy('data_management:dashboard')
+                        return response
+
                     return redirect('data_management:dashboard')
                 else:
                     # Log failed login
@@ -261,13 +274,19 @@ def user_login(request):
                         additional_info="Invalid credentials"
                     )
 
-                    form.add_error(None, 'Invalid username or password')
+                    form.add_error(None, 'Nama pengguna atau kata sandi salah')
             else:
                 logger.warning(f"Login failed - Invalid form data, IP: {user_info['ip']}, Errors: {form.errors}")
+
+            # For HTMX requests, return only the form partial
+            if request.htmx:
+                return render(request, 'partials/login_form.html', {'form': form})
 
         except Exception as e:
             logger.error(f"Login error - IP: {user_info['ip']}, Error: {str(e)}", exc_info=True)
             form = UserLoginForm()
+            if request.htmx:
+                return render(request, 'partials/login_form.html', {'form': form})
     else:
         logger.info(f"Login page accessed from IP: {user_info['ip']}")
         form = UserLoginForm()
@@ -276,7 +295,7 @@ def user_login(request):
 
 
 def staff_login(request):
-    """Staff login view."""
+    """Staff login view with HTMX support."""
     user_info = get_user_info(request)
 
     if request.method == 'POST':
@@ -305,6 +324,12 @@ def staff_login(request):
                         f'Selamat datang, {user.get_full_name() or user.username}! Login staff berhasil.'
                     )
 
+                    # For HTMX requests, return redirect header
+                    if request.htmx:
+                        response = HttpResponse()
+                        response['HX-Redirect'] = reverse_lazy('data_management:dashboard')
+                        return response
+
                     return redirect('data_management:dashboard')
                 else:
                     if user is not None:
@@ -326,13 +351,19 @@ def staff_login(request):
                             additional_info="Invalid credentials"
                         )
 
-                    form.add_error(None, 'Invalid username or password or not a staff member')
+                    form.add_error(None, 'Nama pengguna atau kata sandi salah atau bukan anggota staff')
             else:
                 logger.warning(f"Staff login failed - Invalid form data, IP: {user_info['ip']}, Errors: {form.errors}")
+
+            # For HTMX requests, return only the form partial
+            if request.htmx:
+                return render(request, 'partials/staff_login_form.html', {'form': form})
 
         except Exception as e:
             logger.error(f"Staff login error - IP: {user_info['ip']}, Error: {str(e)}", exc_info=True)
             form = UserLoginForm()
+            if request.htmx:
+                return render(request, 'partials/staff_login_form.html', {'form': form})
     else:
         logger.info(f"Staff login page accessed from IP: {user_info['ip']}")
         form = UserLoginForm()
@@ -346,7 +377,8 @@ class StaffDashboardDataListView(LoginRequiredMixin, ListView):
     context_object_name = 'students'
     paginate_by = 10
     ordering = ['user__first_name']
-    allowed_sort_fields = ['user__first_name', 'user__email', 'degree_level', 'semester_level', 'faculty', 'major', 'level']
+    allowed_sort_fields = ['user__first_name', 'user__email', 'degree_level', 'semester_level', 'faculty', 'major',
+                           'level']
 
     def dispatch(self, request, *args, **kwargs):
         # Permission check
@@ -413,7 +445,7 @@ class StaffDashboardDataListView(LoginRequiredMixin, ListView):
         ctx['current_sort'] = self.request.GET.get('sort', '')
         ctx['current_dir'] = self.request.GET.get('dir', 'asc')
         filter_params = {}
-        for p in ['q','gender','degree_level','level','marital_status']:
+        for p in ['q', 'gender', 'degree_level', 'level', 'marital_status']:
             val = self.request.GET.get(p)
             if val:
                 filter_params[p] = val
@@ -423,6 +455,7 @@ class StaffDashboardDataListView(LoginRequiredMixin, ListView):
         ctx['filtered_students'] = ctx['paginator'].count if 'paginator' in ctx else ctx['total_students']
         ctx['is_filtered'] = ctx['filtered_students'] != ctx['total_students']
         return ctx
+
 
 class StaffStudentDetailView(LoginRequiredMixin, DetailView):
     model = Student
@@ -480,23 +513,23 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx.update({
             'basic_fields': [
-                'email','first_name','last_name','whatsapp_number','birth_place','birth_date','gender',
-                'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
+                'email', 'first_name', 'last_name', 'whatsapp_number', 'birth_place', 'birth_date', 'gender',
+                'marital_status', 'citizenship_status', 'region_origin', 'parents_name', 'parents_phone'
             ],
             'academic_fields': [
-                'institution','faculty','major','degree_level','semester_level','latest_grade','level'
+                'institution', 'faculty', 'major', 'degree_level', 'semester_level', 'latest_grade', 'level'
             ],
             'identity_extra_fields': [
-                'passport_number','nik','lapdik_number','arrival_date','school_origin','home_name','home_location'
+                'passport_number', 'nik', 'lapdik_number', 'arrival_date', 'school_origin', 'home_name', 'home_location'
             ],
-            'health_fields': ['disease_history','disease_status'],
+            'health_fields': ['disease_history', 'disease_status'],
             'interest_field_pairs': [
-                ('sport_interest','sport_achievement'),
-                ('art_interest','art_achievement'),
-                ('literacy_interest','literacy_achievement'),
-                ('science_interest','science_achievement'),
-                ('mtq_interest','mtq_achievement'),
-                ('media_interest','media_achievement'),
+                ('sport_interest', 'sport_achievement'),
+                ('art_interest', 'art_achievement'),
+                ('literacy_interest', 'literacy_achievement'),
+                ('science_interest', 'science_achievement'),
+                ('mtq_interest', 'mtq_achievement'),
+                ('media_interest', 'media_achievement'),
             ],
             'organization_field': 'organization_history',
             'next_url': self.request.GET.get('next') or self.request.POST.get('next') or ''
@@ -519,7 +552,7 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
         # Set draft status based on action prior to saving
         form.instance.is_draft = (action == 'save_draft')
         response = super().form_valid(form)
-        if action in ['save','save_back','save_draft']:
+        if action in ['save', 'save_back', 'save_draft']:
             changed = []
             for f in form_fields:
                 if not hasattr(self.object, f):
@@ -585,23 +618,23 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
         ctx = super().get_context_data(**kwargs)
         ctx.update({
             'basic_fields': [
-                'email','first_name','last_name','whatsapp_number','birth_place','birth_date','gender',
-                'marital_status','citizenship_status','region_origin','parents_name','parents_phone'
+                'email', 'first_name', 'last_name', 'whatsapp_number', 'birth_place', 'birth_date', 'gender',
+                'marital_status', 'citizenship_status', 'region_origin', 'parents_name', 'parents_phone'
             ],
             'academic_fields': [
-                'institution','faculty','major','degree_level','semester_level','latest_grade','level'
+                'institution', 'faculty', 'major', 'degree_level', 'semester_level', 'latest_grade', 'level'
             ],
             'identity_extra_fields': [
-                'passport_number','nik','lapdik_number','arrival_date','school_origin','home_name','home_location'
+                'passport_number', 'nik', 'lapdik_number', 'arrival_date', 'school_origin', 'home_name', 'home_location'
             ],
-            'health_fields': ['disease_history','disease_status'],
+            'health_fields': ['disease_history', 'disease_status'],
             'interest_field_pairs': [
-                ('sport_interest','sport_achievement'),
-                ('art_interest','art_achievement'),
-                ('literacy_interest','literacy_achievement'),
-                ('science_interest','science_achievement'),
-                ('mtq_interest','mtq_achievement'),
-                ('media_interest','media_achievement'),
+                ('sport_interest', 'sport_achievement'),
+                ('art_interest', 'art_achievement'),
+                ('literacy_interest', 'literacy_achievement'),
+                ('science_interest', 'science_achievement'),
+                ('mtq_interest', 'mtq_achievement'),
+                ('media_interest', 'media_achievement'),
             ],
             'organization_field': 'organization_history',
             'next_url': self.request.GET.get('next') or self.request.POST.get('next') or ''
@@ -654,10 +687,12 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
                                 setattr(existing_student, field, new_val)
                     existing_student.is_draft = pending_student.is_draft
                     existing_student.save()
-                    logger.info("[StaffStudentCreateView] student updated id=%s changed_fields=%s", existing_student.id, updated_fields)
+                    logger.info("[StaffStudentCreateView] student updated id=%s changed_fields=%s", existing_student.id,
+                                updated_fields)
                     self.object = existing_student
                 else:
-                    logger.warning("[StaffStudentCreateView] no signal-created student found; using fallback creation path")
+                    logger.warning(
+                        "[StaffStudentCreateView] no signal-created student found; using fallback creation path")
                     pending_student.user = user
                     response = super().form_valid(form)
                     self.object = form.instance
@@ -687,7 +722,8 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
                         )
                         logger.info("[StaffStudentCreateView] credential email queued to %s", self.object.email)
                     except Exception as mail_exc:
-                        logger.error("[StaffStudentCreateView] email send failure student_id=%s error=%s", self.object.pk, mail_exc, exc_info=True)
+                        logger.error("[StaffStudentCreateView] email send failure student_id=%s error=%s",
+                                     self.object.pk, mail_exc, exc_info=True)
                 security_logger.log_data_modification(
                     request=self.request,
                     action="CREATE",
@@ -709,12 +745,14 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
                 )
             if existing_student:
                 target_url = self.get_success_url()
-                logger.info("[StaffStudentCreateView] redirecting (reuse path) student_id=%s to %s", self.object.pk, target_url)
+                logger.info("[StaffStudentCreateView] redirecting (reuse path) student_id=%s to %s", self.object.pk,
+                            target_url)
                 return redirect(target_url)
             logger.info("[StaffStudentCreateView] redirecting (fallback path) student_id=%s", self.object.pk)
             return response
         except Exception as e:
-            logger.error("[StaffStudentCreateView] form_valid exception user=%s error=%s", self.request.user.username, e, exc_info=True)
+            logger.error("[StaffStudentCreateView] form_valid exception user=%s error=%s", self.request.user.username,
+                         e, exc_info=True)
             audit_logger.log_profile_update(
                 request=self.request,
                 updated_fields=list(getattr(form, 'cleaned_data', {}).keys()),
@@ -775,7 +813,7 @@ def export_students_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="students.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Full Name','Email','Passport','NIK','Degree','Semester','Faculty','Major','Level'])
+    writer.writerow(['Full Name', 'Email', 'Passport', 'NIK', 'Degree', 'Semester', 'Faculty', 'Major', 'Level'])
     for s in qs.iterator():
         writer.writerow([
             s.full_name,
@@ -789,6 +827,7 @@ def export_students_csv(request):
             s.get_level_display(),
         ])
     return response
+
 
 # Password reset for a student (staff action)
 @login_required
@@ -837,6 +876,7 @@ def staff_student_reset_password(request, pk):
     )
     return redirect('data_management:staff_student_detail', pk=student.pk)
 
+
 class StaffStudentDeleteView(LoginRequiredMixin, DeleteView):
     model = Student
     template_name = 'dashboard/staff/staff_student_confirm_delete.html'
@@ -881,7 +921,8 @@ def user_logout(request):
     Adds success flash message after logout.
     """
     if request.method != 'POST':
-        return redirect('data_management:dashboard') if request.user.is_authenticated else redirect('data_management:login')
+        return redirect('data_management:dashboard') if request.user.is_authenticated else redirect(
+            'data_management:login')
     was_staff = False
     if request.user.is_authenticated:
         was_staff = request.user.is_staff or request.user.groups.filter(name="data_management_staff").exists()
@@ -890,3 +931,150 @@ def user_logout(request):
     # Add success message on new (clean) session after logout
     messages.success(request, 'Berhasil logout.')
     return redirect('data_management:staff_login' if was_staff else 'data_management:login')
+
+
+def password_reset_request(request):
+    """Custom password reset view with HTMX support."""
+    user_info = get_user_info(request)
+
+    if request.method == 'POST':
+        try:
+            form = PasswordResetForm(request.POST)
+
+            if form.is_valid():
+                # Get email from form
+                email = form.cleaned_data['email']
+
+                # Send password reset email
+                form.save(
+                    request=request,
+                    use_https=request.is_secure(),
+                    email_template_name='registration/password_reset_email.html',
+                    subject_template_name='registration/password_reset_subject.txt',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                )
+
+                # Log the password reset request
+                logger.info(f"Password reset requested - Email: {email}, IP: {user_info['ip']}")
+                security_logger.log_access_attempt(
+                    request=request,
+                    resource="Password Reset",
+                    granted=True,
+                    reason=f"Email: {email}"
+                )
+
+                # For HTMX requests, return the form partial with success message
+                if request.htmx:
+                    return render(request, 'registration/partials/password_reset_form_partial.html', {
+                        'form': PasswordResetForm(),  # Return clean form
+                        'success_message': 'Link reset password telah dikirim ke email Anda. Silakan cek inbox atau spam folder.'
+                    })
+
+                # For regular requests, redirect to done page
+                return redirect('data_management:password_reset_done')
+            else:
+                logger.warning(
+                    f"Password reset failed - Invalid form data, IP: {user_info['ip']}, Errors: {form.errors}")
+
+            # For HTMX requests with errors, return only the form partial
+            if request.htmx:
+                return render(request, 'registration/partials/password_reset_form_partial.html', {'form': form})
+
+        except Exception as e:
+            logger.error(f"Password reset error - IP: {user_info['ip']}, Error: {str(e)}", exc_info=True)
+            # Return error response for HTMX or re-render form page
+            if request.htmx:
+                error_form = PasswordResetForm()
+                # Add non-field error to the form errors dict directly
+                error_form._errors = {'__all__': ['Terjadi kesalahan. Silakan coba lagi.']}
+                return render(request, 'registration/partials/password_reset_form_partial.html', {'form': error_form})
+            # For non-HTMX, re-render the page with an empty form and show the error via messages
+            messages.error(request, 'Terjadi kesalahan. Silakan coba lagi.')
+            form = PasswordResetForm()
+            return render(request, 'registration/password_reset_form.html', {'form': form})
+    else:
+        logger.info(f"Password reset page accessed from IP: {user_info['ip']}")
+        form = PasswordResetForm()
+
+    return render(request, 'registration/password_reset_form.html', {'form': form})
+
+
+def password_reset_confirm(request, uidb64=None, token=None):
+    """Custom password reset confirm view with HTMX support."""
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.forms import SetPasswordForm
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.http import urlsafe_base64_decode
+    from django.utils.encoding import force_str
+
+    user_info = get_user_info(request)
+    User = get_user_model()
+
+    # Decode the user ID
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    # Check if token is valid
+    validlink = user is not None and default_token_generator.check_token(user, token)
+
+    if request.method == 'POST' and validlink:
+        try:
+            form = SetPasswordForm(user, request.POST)
+
+            if form.is_valid():
+                # Save the new password
+                form.save()
+
+                # Log successful password reset
+                logger.info(f"Password reset completed - User: {user.username}, IP: {user_info['ip']}")
+                security_logger.log_data_modification(
+                    request=request,
+                    action="UPDATE",
+                    model="User",
+                    record_id=str(user.pk),
+                    success=True
+                )
+
+                # For HTMX requests, return success partial
+                if request.htmx:
+                    return render(request, 'registration/partials/password_reset_confirm_success.html', {
+                        'success': True
+                    })
+
+                # For regular requests, redirect to complete page
+                return redirect('data_management:password_reset_complete')
+            else:
+                logger.warning(
+                    f"Password reset confirm failed - Invalid form data, User: {user.username}, IP: {user_info['ip']}, Errors: {form.errors}")
+
+                # For HTMX requests with errors, return only the form partial
+                if request.htmx:
+                    return render(request, 'registration/partials/password_reset_confirm_form.html', {
+                        'form': form,
+                        'validlink': True
+                    })
+
+        except Exception as e:
+            logger.error(f"Password reset confirm error - IP: {user_info['ip']}, Error: {str(e)}", exc_info=True)
+            if request.htmx:
+                error_form = SetPasswordForm(user)
+                return render(request, 'registration/partials/password_reset_confirm_form.html', {
+                    'form': error_form,
+                    'validlink': True,
+                    'error_message': 'Terjadi kesalahan. Silakan coba lagi.'
+                })
+    else:
+        if validlink:
+            logger.info(f"Password reset confirm page accessed - User: {user.username}, IP: {user_info['ip']}")
+            form = SetPasswordForm(user)
+        else:
+            form = None
+            logger.warning(f"Invalid password reset link accessed - IP: {user_info['ip']}")
+
+    return render(request, 'registration/password_reset_confirm.html', {
+        'form': form,
+        'validlink': validlink
+    })

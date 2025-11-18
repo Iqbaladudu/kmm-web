@@ -1,6 +1,8 @@
 import uuid
-from django.db import models
+
 from django.contrib.auth import get_user_model
+from django.db import models
+
 
 class Student(models.Model):
     DEGREE_LEVEL_CHOICES = [
@@ -103,6 +105,23 @@ class Student(models.Model):
         null=True,
         blank=True,
         verbose_name="Pendapatan Bulanan"
+    )
+
+    # Guardian Information (Wali)
+    photo_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name="Link Foto (Google Drive)"
+    )
+    guardian_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="Nama Wali/Umdah"
+    )
+    guardian_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Nomor HP Wali/Umdah"
     )
 
     def clean(self):

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@source "../../../**/**/**/**/*.{html,py,js}";
+
+.notifyx-success {
+    @apply bg-green-500 text-white;
+}
+
+.notifyx-success::before {
+    font: var(--fa-font-solid);
+    content: "\f058";
+}
+
+.notifyx-error {
+    @apply bg-red-500 text-white;
+}
+
+.notifyx-error::before {
+    font: var(--fa-font-solid);
+    content: "\f057";
+}
+
+/* Sidebar transitions */
+.sidebar-transition {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Ensure proper z-index layering */
+/* Navbar: z-50 */
+/* Sidebar: z-30 */
+/* Backdrop: z-20 */
+/* Content: z-10 or lower */

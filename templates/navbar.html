@@ -1,64 +1,79 @@
 <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-  <div class="px-4 lg:px-6 py-3">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center">
-        <!-- Mobile menu button -->
-        <button
-          @click="toggle()"
-          data-sidebar-toggle
-          class="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-          aria-controls="sidebar"
-          aria-expanded="false"
-        >
-          <span class="sr-only">Open sidebar</span>
-          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-          </svg>
-        </button>
+    <div class="px-4 lg:px-6 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <!-- Mobile menu button -->
+                <button
+                        data-sidebar-toggle
+                        onclick="
+                            const sidebar = document.getElementById('app-sidebar');
+                            const backdrop = document.getElementById('sidebar-backdrop');
+                            sidebar.classList.toggle('-translate-x-full');
+                            backdrop.classList.toggle('hidden');
+                        "
+                        class="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                        aria-controls="sidebar"
+                        aria-expanded="false"
+                >
+                    <span class="sr-only">Open sidebar</span>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                              d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                              clip-rule="evenodd"></path>
+                    </svg>
+                </button>
 
-        <!-- Logo/Brand -->
-        <a href="/" class="flex ml-2 md:mr-24">
-          <span class="self-center text-xl font-semibold text-gray-900 whitespace-nowrap">KMM Mesir</span>
-        </a>
-      </div>
-
-      <!-- Right side items -->
-      <div class="flex items-center space-x-4">
-        <!-- User menu dropdown -->
-        <div class="relative" x-data="{ open: false }">
-          <button @click="open = !open" type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300">
-            <span class="sr-only">Open user menu</span>
-            <img class="w-8 h-8 rounded-full" src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=3b82f6&color=fff" alt="user photo">
-          </button>
-
-          <!-- Dropdown menu -->
-          <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 z-50 my-4 text-base list-none bg-white divide-y divide-gray-100 rounded shadow-lg w-44">
-            <div class="px-4 py-3" role="none">
-              <p class="text-sm text-gray-900" role="none">
-                {{ user.get_full_name|default:user.username }}
-              </p>
-              <p class="text-sm font-medium text-gray-500 truncate" role="none">
-                {{ user.email }}
-              </p>
+                <!-- Logo/Brand -->
+                <a href="/" class="flex ml-2 md:mr-24">
+                    <span class="self-center text-xl font-semibold text-gray-900 whitespace-nowrap">KMM Mesir</span>
+                </a>
             </div>
-            <ul class="py-1" role="none">
-              <li>
-                <a href="{% url 'data_management:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
-              </li>
-              <li>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
-              </li>
-              <li>
-                <!-- Changed from link to form for proper POST logout -->
-                <form method="post" action="{% url 'data_management:logout' %}" class="block">
-                  {% csrf_token %}
-                  <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</button>
-                </form>
-              </li>
-            </ul>
-          </div>
+
+            <!-- Right side items -->
+            <div class="flex items-center space-x-4">
+                <!-- User menu dropdown -->
+                <div class="relative group">
+                    <button type="button"
+                            class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300"
+                            onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        <span class="sr-only">Open user menu</span>
+                        <img class="w-8 h-8 rounded-full"
+                             src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=3b82f6&color=fff"
+                             alt="user photo">
+                    </button>
+
+                    <!-- Dropdown menu -->
+                    <div class="hidden absolute right-0 z-50 my-4 text-base list-none bg-white divide-y divide-gray-100 rounded shadow-lg w-44">
+                        <div class="px-4 py-3" role="none">
+                            <p class="text-sm text-gray-900" role="none">
+                                {{ user.get_full_name|default:user.username }}
+                            </p>
+                            <p class="text-sm font-medium text-gray-500 truncate" role="none">
+                                {{ user.email }}
+                            </p>
+                        </div>
+                        <ul class="py-1" role="none">
+                            <li>
+                                <a href="{% url 'data_management:profile' %}"
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                            </li>
+                            <li>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                            </li>
+                            <li>
+                                <!-- Changed from link to form for proper POST logout -->
+                                <form method="post" action="{% url 'data_management:logout' %}" class="block">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        Sign out
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </nav>
