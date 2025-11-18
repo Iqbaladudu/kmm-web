@@ -1,49 +1,174 @@
 """
 Production settings for kmm_web_backend project.
 
-This file contains production-specific settings with security hardening.
+Settings ini digunakan untuk production deployment.
+- DEBUG = False
+- PostgreSQL database (via DATABASE_URL)
+- Security settings yang ketat
+- Email backend via SMTP
+- Whitenoise untuk static files
+
+Untuk menggunakan: Set DJANGO_ENV=production
+
+Environment variables yang HARUS diset:
+- SECRET_KEY (minimal 50 karakter)
+- DATABASE_URL (PostgreSQL connection string)
+- ALLOWED_HOSTS (comma-separated domain list)
+
+Environment variables opsional:
+- EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+- REDIS_URL (untuk cache)
 """
 
-
 import dj_database_url
+
 from .base import *
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# ============================================================================
+# DEBUG & SECURITY
+# ============================================================================
+
 DEBUG = False
 
-# Security settings
+# Secret key HARUS diset di production dan minimal 50 karakter
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY or len(SECRET_KEY) < 50:
-    raise ValueError("SECRET_KEY must be set and be at least 50 characters long in production")
+    raise ValueError(
+        "SECRET_KEY must be set and be at least 50 characters long in production. "
+        "Generate one using: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+    )
 
-# Production hosts - MUST be configured via environment variables
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+# ============================================================================
+# ALLOWED HOSTS - HARUS diset dengan domain yang benar
+# ============================================================================
 
-# Database - Use PostgreSQL in production
+# Ambil dari environment variable, jika tidak ada gunakan '*' (tidak disarankan!)
+ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
+
+# Warning jika masih menggunakan wildcard
+if '*' in ALLOWED_HOSTS:
+    import warnings
+
+    warnings.warn(
+        "ALLOWED_HOSTS is set to '*' in production. "
+        "Please set ALLOWED_HOSTS environment variable with your actual domain(s).",
+        RuntimeWarning
+    )
+
+# ============================================================================
+# DATABASE - PostgreSQL via DATABASE_URL
+# ============================================================================
+
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
+        conn_max_age=600,  # Connection pooling
+        conn_health_checks=True,  # Verify connections are healthy
     )
 }
 
+# Validasi database URL harus diset
 if not DATABASES['default']:
-    raise ValueError("DATABASE_URL must be set in production environment")
+    raise ValueError(
+        "DATABASE_URL must be set in production environment. "
+        "Format: postgresql://user:password@host:port/dbname"
+    )
 
-# Cache configuration - Redis for production
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+# ============================================================================
+# CACHE - Redis untuk production (fallback ke dummy jika tidak ada REDIS_URL)
+# ============================================================================
+
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
         }
     }
-}
+    # Session menggunakan cache
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Fallback ke dummy cache jika Redis tidak tersedia
+    import warnings
 
-# Session configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-SESSION_CACHE_ALIAS = 'default'
+    warnings.warn(
+        "REDIS_URL is not set. Using dummy cache. "
+        "For better performance, configure Redis in production.",
+        RuntimeWarning
+    )
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
 
-# Security Headers
+# ============================================================================
+# SECURITY HEADERS - Strict untuk production
+# ============================================================================
+
+# HTTPS redirect
+SECURE_SSL_REDIRECT = True
+
+# Session security
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+
+# CSRF security
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+
+# HSTS (HTTP Strict Transport Security)
+SECURE_HSTS_SECONDS = 31536000  # 1 tahun
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True  # Opsional: untuk daftar di browser HSTS preload list
+
+# Proxy headers (untuk deployment di belakang reverse proxy seperti Nginx)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# ============================================================================
+# EMAIL - SMTP untuk production
+# ============================================================================
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# ============================================================================
+# LOGGING - Production logging ke file dan console
+# ============================================================================
+
+# Set logging level ke WARNING untuk production (lebih sedikit noise)
+LOGGING['root']['level'] = 'WARNING'
+LOGGING['handlers']['console']['level'] = 'WARNING'
+LOGGING['handlers']['file']['level'] = 'INFO'
+
+# Tambahkan file handler ke root logger untuk production
+LOGGING['root']['handlers'] = ['console', 'file', 'error_file']
+
+# ============================================================================
+# STATIC FILES - Whitenoise untuk serving static files
+# ============================================================================
+
+# Whitenoise sudah dikonfigurasi di static.py, tidak perlu override
+
+# ============================================================================
+# PERFORMANCE TUNING
+# ============================================================================
+
+# Template caching untuk production
+TEMPLATES[0]['APP_DIRS'] = False  # Harus False saat pakai custom loaders
+TEMPLATES[0]['OPTIONS']['loaders'] = [
+    ('django.template.loaders.cached.Loader', [
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    ]),
+]

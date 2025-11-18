@@ -382,7 +382,7 @@ class StaffDashboardDataListView(LoginRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         # Permission check
-        if not request.user.groups.filter(name="data_management_staff").exists():
+        if not request.user.is_staff:
             security_logger.log_access_attempt(
                 request=request,
                 resource="Staff Dashboard Data List",
@@ -463,7 +463,7 @@ class StaffStudentDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'student'
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name="data_management_staff").exists():
+        if not request.user.is_staff:
             security_logger.log_access_attempt(
                 request=request,
                 resource="Staff Student Detail",
@@ -491,7 +491,7 @@ class StaffStudentUpdateView(LoginRequiredMixin, UpdateView):
     context_object_name = 'student'
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name="data_management_staff").exists():
+        if not request.user.is_staff:
             security_logger.log_access_attempt(
                 request=request,
                 resource="Staff Student Edit",
@@ -597,7 +597,7 @@ class StaffStudentCreateView(LoginRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         logger.info("[StaffStudentCreateView] dispatch start user=%s path=%s", request.user.username, request.path)
-        if not request.user.groups.filter(name="data_management_staff").exists():
+        if not request.user.is_staff:
             logger.warning("[StaffStudentCreateView] access denied user=%s not in staff group", request.user.username)
             security_logger.log_access_attempt(
                 request=request,
@@ -834,7 +834,7 @@ def export_students_csv(request):
 def staff_student_reset_password(request, pk):
     if request.method != 'POST':
         raise Http404()
-    if not request.user.groups.filter(name="data_management_staff").exists():
+    if not request.user.is_staff:
         raise Http404()
     student = get_object_or_404(Student, pk=pk)
     if not student.user:
@@ -884,7 +884,7 @@ class StaffStudentDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('staff_student_list')
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name="data_management_staff").exists():
+        if not request.user.is_staff:
             security_logger.log_access_attempt(
                 request=request,
                 resource="Staff Student Delete",

@@ -6,6 +6,8 @@ from django.db import models
 
 class Student(models.Model):
     DEGREE_LEVEL_CHOICES = [
+        ('mahad', 'Mahad'),
+        ('DL', 'Daurah Lughah'),
         ('S1', 'S1'),
         ('S2', 'S2'),
         ('S3', 'S3'),
@@ -48,10 +50,10 @@ class Student(models.Model):
     degree_level = models.CharField(max_length=20, choices=DEGREE_LEVEL_CHOICES, db_index=True)
     semester_level = models.SmallIntegerField()
     latest_grade = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
-    home_name = models.CharField(max_length=80, blank=True)
+    home_name = models.CharField(max_length=200, blank=True)
     home_location = models.CharField(max_length=150, blank=True)
     parents_name = models.CharField(max_length=150, blank=True)
-    parents_phone = models.CharField(max_length=20, blank=True, verbose_name="Nomor Telepon Orang Tua")
+    parents_phone = models.CharField(max_length=50, blank=True, verbose_name="Nomor Telepon Orang Tua")
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='maba', db_index=True)
     is_draft = models.BooleanField(default=False)  # indicates incomplete / draft record managed by staff
 

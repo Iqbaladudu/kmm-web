@@ -1,28 +1,49 @@
 """
 Local development settings for kmm_web_backend project.
+
+Settings ini digunakan untuk development lokal.
+- DEBUG = True
+- SQLite database
+- Console email backend
+- Relaxed security settings
+- Verbose logging
+
+Untuk menggunakan: Jangan set DJANGO_ENV atau set DJANGO_ENV=local
 """
 
 from .base import *
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# ============================================================================
+# DEBUG & DEVELOPMENT
+# ============================================================================
+
 DEBUG = True
 
-# Development hosts - W020 fix
+# Development hosts - allow semua untuk kemudahan development
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
 
-# Development SECRET_KEY - W009 fix (generate a proper one for dev)
-SECRET_KEY = os.environ.get('SECRET_KEY',
-                            'dev-secret-key-that-is-long-enough-and-secure-for-development-use-only-change-in-production-50-chars-minimum')
+# Development SECRET_KEY - aman untuk development saja
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'dev-secret-key-that-is-long-enough-and-secure-for-development-use-only-change-in-production-50-chars-minimum'
+)
 
-# Add development-only apps
+# ============================================================================
+# DEVELOPMENT APPS & MIDDLEWARE
+# ============================================================================
+
+# Tambahkan development-only apps
 INSTALLED_APPS += [
-    'django_browser_reload',
+    'django_browser_reload',  # Auto-reload browser saat code berubah
 ]
 
-# Add development middleware
+# Tambahkan development middleware
 MIDDLEWARE.append('django_browser_reload.middleware.BrowserReloadMiddleware')
 
-# Database - SQLite for local development
+# ============================================================================
+# DATABASE - SQLite untuk development
+# ============================================================================
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -30,34 +51,59 @@ DATABASES = {
     }
 }
 
-# Development email backend
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# ============================================================================
+# CACHE - Dummy cache untuk development (tidak benar-benar cache)
+# ============================================================================
 
-# Disable security features for development
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SECURE_SSL_REDIRECT = False
-
-# Enhanced logging for development
-LOGGING['handlers']['console']['formatter'] = 'verbose'
-LOGGING['handlers']['console']['level'] = 'DEBUG'
-LOGGING['root']['level'] = 'DEBUG'
-
-# Development cache
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 
-# File storage for development
+# ============================================================================
+# EMAIL - Console backend (print ke terminal)
+# ============================================================================
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# ============================================================================
+# SECURITY - Relaxed untuk development
+# ============================================================================
+
+# Disable HTTPS requirements
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
+SECURE_HSTS_SECONDS = 0
+
+# ============================================================================
+# STATIC FILES - Simple storage untuk development
+# ============================================================================
+
 STORAGES["default"]["BACKEND"] = "django.core.files.storage.FileSystemStorage"
 STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
-# Vite configuration - use built files, not dev server
+# ============================================================================
+# LOGGING - Verbose untuk development
+# ============================================================================
+
+# Console logging dengan level DEBUG untuk lihat semua detail
+LOGGING['handlers']['console']['formatter'] = 'verbose'
+LOGGING['handlers']['console']['level'] = 'DEBUG'
+LOGGING['root']['level'] = 'DEBUG'
+
+# ============================================================================
+# VITE - Use built files (set True jika mau pakai Vite dev server)
+# ============================================================================
+
 VITE_DEV_MODE = False
 
-# Django Debug Toolbar (optional - uncomment if you want to use it)
+# ============================================================================
+# DJANGO DEBUG TOOLBAR (Optional)
+# Uncomment jika ingin pakai Django Debug Toolbar
+# ============================================================================
+
 # if 'django_debug_toolbar' in INSTALLED_APPS:
 #     MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
 #     INTERNAL_IPS = ['127.0.0.1']
