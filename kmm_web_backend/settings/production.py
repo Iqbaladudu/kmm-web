@@ -75,42 +75,12 @@ if not DATABASES['default']:
         "Format: postgresql://user:password@host:port/dbname"
     )
 
-# ============================================================================
-# CACHE - Redis untuk production (fallback ke dummy jika tidak ada REDIS_URL)
-# ============================================================================
-
-REDIS_URL = os.environ.get('REDIS_URL')
-if REDIS_URL:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL,
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            }
-        }
+# settings.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
-    # Session menggunakan cache
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-    SESSION_CACHE_ALIAS = 'default'
-else:
-    # Fallback ke dummy cache jika Redis tidak tersedia
-    import warnings
-
-    warnings.warn(
-        "REDIS_URL is not set. Using dummy cache. "
-        "For better performance, configure Redis in production.",
-        RuntimeWarning
-    )
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
-
-# ============================================================================
-# SECURITY HEADERS - Strict untuk production
-# ============================================================================
+}
 
 # HTTPS redirect
 SECURE_SSL_REDIRECT = True

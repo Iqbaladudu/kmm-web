@@ -1,100 +1,34 @@
-# ============================================================================
-# Stage 1: Build Vite Frontend Assets
-# ============================================================================
-FROM node:20-slim AS frontend-builder
+# pull official base image
+FROM python:3.11.14
 
-WORKDIR /app/vite
-
-# Copy package files for vite
-COPY vite/src/package.json vite/src/package-lock.json* ./
-
-# Install node dependencies
-RUN npm ci --only=production
-
-# Copy vite source files
-COPY vite/src ./
-
-# Build production assets
-RUN npm run build
-
-# ============================================================================
-# Stage 2: Python Dependencies and Application
-# ============================================================================
-FROM python:3.13-slim-bookworm AS python-builder
-
-# Install system dependencies for building Python packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Download and install uv
-ADD https://astral.sh/uv/install.sh /uv-installer.sh
-RUN sh /uv-installer.sh && rm /uv-installer.sh
-ENV PATH="/root/.local/bin/:$PATH"
-
+# set work directory
 WORKDIR /app
 
-# Copy dependency files
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PROJECT_ENVIRONMENT=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
+
+# install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Copy lock files
 COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies (production only)
-RUN uv sync --locked --no-dev
+# Synchronize dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-# ============================================================================
-# Stage 3: Final Production Image
-# ============================================================================
-FROM python:3.13-slim-bookworm
+RUN uv add uvicorn
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user for running the application
-RUN useradd -m -u 1000 -s /bin/bash appuser
-
-WORKDIR /app
-
-# Copy Python virtual environment from builder
-COPY --from=python-builder /app/.venv /app/.venv
-
-# Copy built frontend assets from frontend-builder
-COPY --from=frontend-builder /app/vite/dist /app/vite/static/dist
-
-# Copy application code
-COPY --chown=appuser:appuser . .
-
-# Create directories for static files, media files, and logs
-RUN mkdir -p /app/staticfiles /app/media /app/logs && \
-    chown -R appuser:appuser /app/staticfiles /app/media /app/logs
-
-# Set environment variables
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    DJANGO_SETTINGS_MODULE=kmm_web_backend.settings
-
-# Copy entrypoint script
-COPY --chown=appuser:appuser docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Switch to non-root user
-USER appuser
+# copy project
+COPY . .
 
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
-
-# Use entrypoint script
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-
-# Default command (can be overridden)
-CMD ["gunicorn", "kmm_web_backend.wsgi:application", "--config", "gunicorn.conf.py"]
+# Run uvicorn directly (without uv run for production)
+CMD ["uvicorn", "kmm_web_backend.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
