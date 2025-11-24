@@ -1,4 +1,3 @@
-# pull official base image
 FROM python:3.11.14
 
 # set work directory
@@ -6,23 +5,27 @@ WORKDIR /app
 
 # Install Node.js for Vite build
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
+apt-get install -y nodejs && \
+rm -rf /var/lib/apt/lists/*
 
 # install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Copy lock files
-COPY pyproject.toml uv.lock ./
+# copy project
+COPY . .
 
-# Synchronize dependencies
+# Synchronize dependencies (install all production dependencies)
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
-RUN uv add uvicorn
+# Set environment to use the virtual environment
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
-# copy project
-COPY . .
+# Verify critical dependencies are installed
+RUN python -c "import psycopg; print(f'✅ psycopg {psycopg.__version__} installed')" && \
+    python -c "import django; print(f'✅ Django {django.__version__} installed')" && \
+    python -c "import uvicorn; print(f'✅ uvicorn installed')"
 
 # Build Vite assets
 WORKDIR /app/vite/src
@@ -40,5 +43,5 @@ EXPOSE 8000
 # Set entrypoint
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
-# Run uvicorn using uv run to ensure proper environment
-CMD ["uv", "run", "uvicorn", "kmm_web_backend.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+# Run uvicorn directly from virtual environment
+CMD ["uvicorn", "kmm_web_backend.asgi:application", "--host", "0.0.0.0", "--port", "8000"]

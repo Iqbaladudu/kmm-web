@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Activate virtual environment
+export VIRTUAL_ENV=/app/.venv
+export PATH="/app/.venv/bin:$PATH"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -8,6 +12,11 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}🚀 Starting KMM Web Application...${NC}"
+
+# Verify Python is using the correct environment
+echo -e "${YELLOW}🐍 Python: $(which python)${NC}"
+echo -e "${YELLOW}📦 Checking psycopg installation...${NC}"
+python -c "import psycopg; print(f'✅ psycopg {psycopg.__version__} installed')" || echo -e "${RED}❌ psycopg not found${NC}"
 
 # Function to wait for PostgreSQL
 wait_for_postgres() {
@@ -93,16 +102,16 @@ wait_for_redis
 
 # Run database migrations
 echo -e "${YELLOW}🔄 Running database migrations...${NC}"
-uv run python manage.py migrate --noinput
+python manage.py migrate --noinput
 
 # Collect static files
 echo -e "${YELLOW}📁 Collecting static files...${NC}"
-uv run python manage.py collectstatic --noinput --clear
+python manage.py collectstatic --noinput --clear
 
 # Create superuser if it doesn't exist
 if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ]; then
     echo -e "${YELLOW}👤 Creating superuser...${NC}"
-    uv run python manage.py shell << END
+    python manage.py shell << END
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username='$DJANGO_SUPERUSER_USERNAME').exists():
@@ -115,7 +124,7 @@ fi
 
 # Run deployment checks
 echo -e "${YELLOW}🔍 Running deployment checks...${NC}"
-uv run python manage.py check --deploy --fail-level WARNING
+python manage.py check --deploy --fail-level WARNING
 
 echo -e "${GREEN}✅ Application is ready!${NC}"
 echo -e "${GREEN}🎯 Starting application server...${NC}"
