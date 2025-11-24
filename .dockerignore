@@ -1,0 +1,21 @@
+# Add to .gitignore for Docker-related files
+
+# Docker environment file (contains secrets)
+.env
+
+# SSL certificates (should be managed separately)
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+
+# Database backups (should be backed up separately)
+backups/*.sql
+backups/*.sql.gz
+backups/*.tar.gz
+
+# User uploaded media files (should be backed up separately)
+media/*
+
+# Application logs
+logs/*.log
+
