@@ -179,6 +179,13 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # ============================================================================
+# VITE CONFIGURATION - Production mode
+# ============================================================================
+
+# Disable Vite dev mode in production (use built assets)
+VITE_DEV_MODE = False
+
+# ============================================================================
 # PERFORMANCE TUNING
 # ============================================================================
 
