@@ -99,6 +99,64 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True  # Opsional: untuk daftar di browser HSTS preload list
 
 # Proxy headers (untuk deployment di belakang reverse proxy seperti Nginx)
+
+# ============================================================================
+# LOGGING - Override untuk containerized environment
+# ============================================================================
+
+# Di containerized environment, log ke stdout/stderr daripada file
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'error_console': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+    },
+    'root': {
+        'level': 'INFO',
+        'handlers': ['console'],
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['error_console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['error_console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'data_management': {
+            'handlers': ['console', 'error_console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # ============================================================================
@@ -111,18 +169,6 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-
-# ============================================================================
-# LOGGING - Production logging ke file dan console
-# ============================================================================
-
-# Set logging level ke WARNING untuk production (lebih sedikit noise)
-LOGGING['root']['level'] = 'WARNING'
-LOGGING['handlers']['console']['level'] = 'WARNING'
-LOGGING['handlers']['file']['level'] = 'INFO'
-
-# Tambahkan file handler ke root logger untuk production
-LOGGING['root']['handlers'] = ['console', 'file', 'error_file']
 
 # ============================================================================
 # STATIC FILES - Whitenoise untuk serving static files
