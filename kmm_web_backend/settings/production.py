@@ -174,7 +174,9 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 # STATIC FILES - Whitenoise untuk serving static files
 # ============================================================================
 
-# Whitenoise sudah dikonfigurasi di static.py, tidak perlu override
+# Override storage backend untuk production - use ManifestStaticFilesStorage
+# instead of CompressedManifestStaticFilesStorage to avoid manifest errors
+STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # ============================================================================
 # PERFORMANCE TUNING

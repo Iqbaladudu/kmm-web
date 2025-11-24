@@ -93,16 +93,16 @@ wait_for_redis
 
 # Run database migrations
 echo -e "${YELLOW}🔄 Running database migrations...${NC}"
-python manage.py migrate --noinput
+uv run python manage.py migrate --noinput
 
 # Collect static files
 echo -e "${YELLOW}📁 Collecting static files...${NC}"
-python manage.py collectstatic --noinput --clear
+uv run python manage.py collectstatic --noinput --clear
 
 # Create superuser if it doesn't exist
 if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ]; then
     echo -e "${YELLOW}👤 Creating superuser...${NC}"
-    python manage.py shell << END
+    uv run python manage.py shell << END
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username='$DJANGO_SUPERUSER_USERNAME').exists():
@@ -115,7 +115,7 @@ fi
 
 # Run deployment checks
 echo -e "${YELLOW}🔍 Running deployment checks...${NC}"
-python manage.py check --deploy --fail-level WARNING
+uv run python manage.py check --deploy --fail-level WARNING
 
 echo -e "${GREEN}✅ Application is ready!${NC}"
 echo -e "${GREEN}🎯 Starting application server...${NC}"
